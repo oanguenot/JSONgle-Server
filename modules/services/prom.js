@@ -24,7 +24,14 @@ var responses = new client.Summary({
   name: 'jsongleserver_response_time_ms',
   help: 'Response time in millis',
   labelNames: ['method', 'path', 'status']
-})
+});
+
+var users = new client.Gauge({
+  name: 'jsongleserver_connected_users',
+  help: 'Number of simultaneous users',
+  labelNames: ['users']
+});
+users.set(0);
 
 exports.collect = () => {
   console.log("collect default metrics")
@@ -59,3 +66,15 @@ exports.responseCounters = ResponseTime((req, res, time) => {
     responses.labels(req.method, req.url, res.statusCode).observe(time);
   }
 });
+
+exports.resetUsersCounter = () => {
+  users.set(0);
+}
+
+exports.addUsersCounter = () => {
+  users.inc(1);
+}
+
+exports.minusUsersCounter = () => {
+  users.dec(1);
+}

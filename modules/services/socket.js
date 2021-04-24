@@ -1,4 +1,5 @@
 const { info } = require("./logger");
+const { addUsersCounter, minusUsersCounter } = require("./prom");
 
 const users = {};
 
@@ -6,6 +7,7 @@ exports.listen = (io) => {
 
   io.on('connection', socket => {
     console.log(">>>connected")
+    addUsersCounter();
   })
 
   io.sockets.on("connection", (socket, pseudo) => {
@@ -33,6 +35,7 @@ exports.listen = (io) => {
 
       delete users[id];
       socket.to("room").emit("bye", { id: id });
+      minusUsersCounter();
     });
 
     socket.on("jsongle", (message) => {
