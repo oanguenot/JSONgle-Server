@@ -1,4 +1,4 @@
-const { logInfo } = require("./logger");
+const { info } = require("./logger");
 
 const users = {};
 
@@ -9,19 +9,19 @@ exports.listen = (io) => {
   })
 
   io.sockets.on("connection", (socket, pseudo) => {
-    logInfo(`[io    ] new client connected ${socket.id}`);
+    info(`[io    ] new client connected ${socket.id}`);
 
     socket.join("room");
 
     socket.on("hello", (message) => {
       users[message.id] = socket.id;
 
-      logInfo("[io    ] HELLO ", message);
+      info("[io    ] HELLO ", message);
       socket.to("room").emit("hello", message);
     });
 
     socket.on("welcome", (message) => {
-      logInfo("[io    ] WELCOME ", message);
+      info("[io    ] WELCOME ", message);
 
       io.to(users[message.to]).emit("welcome", message.data);
     });
@@ -36,7 +36,7 @@ exports.listen = (io) => {
     });
 
     socket.on("jsongle", (message) => {
-      logInfo("[io    ] MESSAGE ", message);
+      info("[io    ] MESSAGE ", message);
 
       if (!(message.to in users)) {
         const abortMsg = {
