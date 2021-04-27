@@ -1,25 +1,55 @@
-const { info } = require("./logger");
+const { info, warning } = require("./logger");
 const { addUsersCounter, minusUsersCounter } = require("./prom");
+const package = require('../../package.json');
 
 const users = {};
 
+const moduleName = '[io    ]';
+
 exports.listen = (io) => {
 
-  io.on('connection', socket => {
-    console.log(">>>connected")
-    addUsersCounter();
-  })
+  // Middleware for limiting users
+  io.use((socket, next) => {
+    if (io.engine.clientsCount >= process.env.maxConcurrentUsers) {
+      socket.disconnect(true);
+    }
+    next();
+  });
 
   io.sockets.on("connection", (socket, pseudo) => {
-    info(`[io    ] new client connected ${socket.id}`);
+    info(`${moduleName} new client connected ${socket.id}`);
 
-    socket.join("room");
+    addUsersCounter();
 
-    socket.on("hello", (message) => {
-      users[message.id] = socket.id;
+    const totalUsers = io.engine.clientsCount;
+    info(`${moduleName} #users=${totalUsers}`);
 
-      info("[io    ] HELLO ", message);
-      socket.to("room").emit("hello", message);
+    // Emit hello to newcomer
+    socket.emit('hello', { version: package.version, sn: package.name });
+
+    socket.on("register", async (message) => {
+
+      info(`${moduleName} on 'REGISTER' `, message);
+
+      const { rid, uid, dn } = message;
+
+      if (!rid || !uid || !dn) {
+        warning(`${moduleName} register not done - missing parameter`);
+        socket.emit('register-failed', { 'msg': 'Missing rid, uid or dn parameter' });
+      }
+
+      const usersInRoom = await io.sockets(rid);
+      info(`${moduleName} ${usersInRoom} person(s) already in room ${rid}`);
+
+      socket.data = message;
+
+      info(`${moduleName} joined room ${rid}`);
+      socket.join(rid);
+
+      usersInRoom.forEach(existingSocket => {
+        existingSocket.emit('joined', message);
+        socket.emit('already-joined', existingSocket.data)
+      });
     });
 
     socket.on("welcome", (message) => {
