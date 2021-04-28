@@ -1,5 +1,6 @@
 {
   "name": "jsongle-server",
+  "description": "JSONGle Signaling Server",
   "version": "1.0.0",
   "engines": {
     "node": "*"

@@ -1,12 +1,10 @@
 const express = require("express");
 const dotenv = require('dotenv');
 const cors = require('cors')
-const path = require("path");
 const { info, debug, setLevelTo, getLogLevel } = require("./modules/services/logger");
 const morgan = require("morgan");
 const fs = require('fs');
 
-const { generateNewId } = require("./modules/helper");
 const socket = require('./modules/services/socket');
 const { collect, requestCounters, responseCounters } = require("./modules/services/prom");
 
@@ -17,10 +15,12 @@ const options = {
 
 const initialize = () => {
 
-    info("---------------- Server started!");
+    info("---------------- JSONGLE-SERVER started!");
 
     debug("Read env config");
     dotenv.config();
+
+    info(`Started instance ${process.env.id}`);
 
     setLevelTo(process.env.logLevel);
     debug("Log level set to ", { 'level': getLogLevel() });
