@@ -1,5 +1,34 @@
 const bunyan = require("bunyan");
-const log = bunyan.createLogger({ name: "webrtc-signaling" });
+
+function messageSerializer(req) {
+    return {
+        from: req.from,
+        to: req.to,
+        action: req.jsongle ? req.jsongle.action : 'not-jongle'
+    }
+}
+
+
+const log = bunyan.createLogger({
+    name: "jsongle-server",
+    serializers: {
+        req: messageSerializer
+    },
+    streams: [
+        {
+            name: 'console',
+            level: 'info',
+            stream: process.stdout,
+            type: 'stream',
+        },
+        {
+            name: 'file',
+            type: 'rotating-file',
+            path: process.env.logPath || '/tmp/jsongle-server.log',
+            period: '1d',   // daily rotation
+            count: 3        // keep 3 back copies
+        }]
+});
 
 exports.info = (message, data) => {
     if (data) {

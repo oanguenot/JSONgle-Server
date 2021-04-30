@@ -1,7 +1,8 @@
 const { info, warning, error } = require("./logger");
 const { addUsersCounter, minusUsersCounter } = require("./prom");
 const package = require('../../package.json');
-const { sessionHello, sessionRegisterFailed } = require("../helpers/jsongle");
+const { sessionHello, iqError, descriptionForIQNotFound, sessionJoined } = require("../helpers/jsongle");
+const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_ERROR_RESPONSE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE } = require("../helpers/helper");
 
 const users = {};
 
@@ -9,29 +10,66 @@ const moduleName = '[io    ]';
 
 exports.listen = (io) => {
 
-  const registerNewUser = async (message, socket) => {
-    info(`${moduleName} on 'REGISTER' `, message);
+  const registerUserToRoom = async (description, socket) => {
 
-    const { rid, uid, dn } = message;
+    return new Promise(async (resolve, reject) => {
+      const { rid, uid, dn } = description;
+    
+      if (!rid || !uid || !dn) {
+        warning(`${moduleName} can't register - missing parameter`);
+        reject({
+          query: JSONGLE_IQ_ERROR_RESPONSE.REGISTRATION_FAILED,
+          description: {
+            errorCode: JSONGLE_ERROR_CODE.BAD_PARAMETERS,
+            errorDetails: 'Missing rid, uid or dn parameter'
+          }
+        })
+        return;
+      }
 
-    if (!rid || !uid || !dn) {
-      warning(`${moduleName} register not done - missing parameter`);
-      socket.emit('jsongle', sessionRegisterFailed('Missing rid, uid or dn parameter'));
-      return;
-    } 
+      info(`${moduleName} register ${uid} to room ${rid}`);
 
-    const usersInRoom = await io.sockets(rid);
-    info(`${moduleName} ${usersInRoom} person(s) already in room ${rid}`);
+      const usersInRoom = await io.sockets(rid);
+      info(`${moduleName} ${usersInRoom} person(s) already in room ${rid}`);
 
-    socket.data = message;
+      socket.data = description;
 
-    info(`${moduleName} joined room ${rid}`);
-    socket.join(rid);
+      info(`${moduleName} joined room ${rid}`);
+      socket.join(rid);
 
-    usersInRoom.forEach(existingSocket => {
-      existingSocket.emit('joined', message);
-      socket.emit('already-joined', existingSocket.data)
-    });
+      const joined = [];
+
+      usersInRoom.forEach(existingSocket => {
+        existingSocket.emit(COMMON.JSONGLE, sessionJoined(process.env.id, existingSocket.data.uid, description));
+        joined.push(existingSocket.data);
+      });
+
+      resolve({
+        query: JSONGLE_MESSAGE_TYPE.IQ_RESULT,
+        description: {
+          joined
+        }
+      })
+    })
+  }
+
+  handleIQ = async (message, socket) => {
+    info(`${moduleName} on 'IQ-SET' query ${message.jsongle.query}`);
+
+    const { jsongle } = message;
+
+    switch (jsongle.query) {
+      case JSONGLE_IQ_QUERY.REGISTER:
+        try {
+          const result = await registerUserToRoom(jsongle.description, socket);
+          socket.emit(COMMON.JSONGLE, iqResult(message.to, message.from, jsongle.transaction, result.query, result.description));
+        } catch (err) {
+          socket.emit(COMMON.JSONGLE, iqError(message.to, message.from, jsongle.transaction, err.query, err.description));
+        }
+        break;
+      default:
+        socket.emit(COMMON.JSONGLE, iqError(message.to, message.from, jsongle.transaction, JSONGLE_IQ_ERROR_RESPONSE.IQ_NOT_FOUND, descriptionForIQNotFound(jsongle.query)))
+    }
   }
 
   // Middleware for limiting users
@@ -52,7 +90,7 @@ exports.listen = (io) => {
     info(`${moduleName} #users=${totalUsers}`);
 
     // Emit hello to newcomer
-    socket.emit('jsongle', sessionHello(process.env.id, package.version, package.description));
+    socket.emit(COMMON.JSONGLE, sessionHello(process.env.id, package.version, package.description));
 
     // socket.on("welcome", (message) => {
     //   info("[io    ] WELCOME ", message);
@@ -70,11 +108,11 @@ exports.listen = (io) => {
       minusUsersCounter();
     });
 
-    socket.on("jsongle", (message) => {
-      info("[io    ] MESSAGE ", message);
+    socket.on(COMMON.JSONGLE, (message) => {
+      info(message);
 
       const actions = {
-        'session-register': registerNewUser
+        [JSONGLE_MESSAGE_TYPE.IQ_SET]: handleIQ
       };
 
       if (message.jsongle.action in actions) {
