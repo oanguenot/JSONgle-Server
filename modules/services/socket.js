@@ -1,12 +1,15 @@
 const { info, warning, error } = require("./logger");
 const { addUsersCounter, minusUsersCounter } = require("./prom");
 const package = require('../../package.json');
-const { sessionHello, iqError, descriptionForIQNotFound, sessionJoined } = require("../helpers/jsongle");
+const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, buildAck } = require("../helpers/jsongle");
 const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_ERROR_RESPONSE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE } = require("../helpers/helper");
+const { generateNewId } = require("../helpers/common");
 
 const users = {};
 
 const moduleName = '[io    ]';
+
+const DEFAULT_MAX_CONCURRENT_USERS = 50;
 
 exports.listen = (io) => {
 
@@ -72,9 +75,32 @@ exports.listen = (io) => {
     }
   }
 
+  handleIQResult = async (message, socket) => {
+    info(`${moduleName} on 'IQ-RESULT' query ${message.jsongle.query}`);
+
+    const { jsongle } = message;
+
+    switch (jsongle.query) {
+      case JSONGLE_IQ_QUERY.HELLO:
+        if (!isHelloValid(jsongle.description)) {
+          error(`${moduleName} no 'uid' parameter set`);
+          socket.emit(COMMON.JSONGLE, buildAck(process.env.id, message.from, jsongle.transaction));
+          socket.emit(COMMON.JSONGLE, buildError(process.env.id, message.from, describeErrorHello("Missing 'uid' parameter")));
+          return;
+        }
+
+        // Store user identification information
+        socket.data = jsongle.description;
+        info(`${moduleName} user ${jsongle.description.uid} associated to socket ${socket.id}`);
+        socket.emit(COMMON.JSONGLE, buildAck(process.env.id, message.from, jsongle.transaction));
+        break;
+      default:
+    }
+  }
+
   // Middleware for limiting users
   io.use((socket, next) => {
-    if (io.engine.clientsCount >= process.env.maxConcurrentUsers) {
+    if (io.engine.clientsCount >= (process.env.maxConcurrentUsers || DEFAULT_MAX_CONCURRENT_USERS)) {
       error(`${moduleName} max number of client exceeded - client disconnected`);
       socket.disconnect(true);
     }
@@ -90,29 +116,33 @@ exports.listen = (io) => {
     info(`${moduleName} #users=${totalUsers}`);
 
     // Emit hello to newcomer
-    socket.emit(COMMON.JSONGLE, sessionHello(process.env.id, package.version, package.description));
-
-    // socket.on("welcome", (message) => {
-    //   info("[io    ] WELCOME ", message);
-
-    //   io.to(users[message.to]).emit("welcome", message.data);
-    // });
+    socket.emit(COMMON.JSONGLE, buildIQ(process.env.id, generateNewId(), JSONGLE_MESSAGE_TYPE.IQ_GET, generateNewId(), JSONGLE_IQ_QUERY.HELLO, describeHello(process.env.id, package.version, package.description)));
 
     socket.on("disconnect", () => {
       let id = Object.keys(users).find((id) => {
         return (users[id] === socket.id);
       });
 
+      info(`${moduleName} on user ${socket.id} disconnected`);
+
       delete users[id];
       socket.to("room").emit("bye", { id: id });
       minusUsersCounter();
+
+      const totalUsers = io.engine.clientsCount;
+      info(`${moduleName} #users=${totalUsers}`);
     });
 
     socket.on(COMMON.JSONGLE, (message) => {
       info(message);
 
+      if (!socket.data) {
+        socket.emit(COMMON.JSONGLE, build)
+      }
+
       const actions = {
-        [JSONGLE_MESSAGE_TYPE.IQ_SET]: handleIQ
+        [JSONGLE_MESSAGE_TYPE.IQ_SET]: handleIQ,
+        [JSONGLE_MESSAGE_TYPE.IQ_RESULT]: handleIQResult
       };
 
       if (message.jsongle.action in actions) {

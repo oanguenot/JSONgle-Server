@@ -1,42 +1,29 @@
 const { generateNewId } = require("./common");
-const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_ERROR_RESPONSE } = require('./helper');
+const { JSONGLE_ERROR_CODE, JSONGLE_MESSAGE_TYPE } = require('./helper');
 
-exports.sessionHello = (serverId, serverVersion, serverDescription) => (
+exports.describeHello = (serverId, serverVersion, serverDescription) => (
   {
-    id: generateNewId(),
-    from: serverId,
-    to: `anonymous_<${generateNewId()}>`,
-    jsongle: {
-      action: JSONGLE_MESSAGE_TYPE.SESSION_HELLO,
-      description: {
-        version: serverVersion,
-        sn: serverId,
-        info: serverDescription,
-        connected: new Date().toJSON()
-      },
-    },
+    version: serverVersion,
+    sn: serverId,
+    info: serverDescription,
+    connected: new Date().toJSON()
   }
 );
 
-exports.sessionJoined = (serverId, to, description) => (
+exports.describeJoined = (description) => (
   {
-    id: generateNewId(),
-    from: serverId,
-    to: to || `anonymous_<${generateNewId()}>`,
-    jsongle: {
-      action: JSONGLE_MESSAGE_TYPE.SESSIOn_JOINED,
       description,
-    },
+    joined: new Date().toJSON()
   }
 );
 
-exports.iqError = (from, to, transaction, query, description) => (
+exports.buildIQ = (from, to, iqType, transaction, query, description) => (
   {
     id: generateNewId(),
     from: from,
-    to: to || `anonymous_<${generateNewId()}>`,
+    to: to,
     jsongle: {
-      action: JSONGLE_MESSAGE_TYPE.IQ_ERROR,
+      action: iqType,
       query,
       transaction,
       description,
@@ -44,24 +31,48 @@ exports.iqError = (from, to, transaction, query, description) => (
   }
 );
 
-exports.iqResult = (from, to, transaction, query, description) => (
+exports.buildAck = (from, to, transaction) => (
   {
     id: generateNewId(),
     from: from,
-    to: to || `anonymous_<${generateNewId()}>`,
+    to: to,
     jsongle: {
-      action: JSONGLE_MESSAGE_TYPE.IQ_RESULT,
-      query,
-      transaction,
-      description,
-    },
+      action: JSONGLE_MESSAGE_TYPE.ACK,
+      transaction
+    }
   }
 );
 
-exports.descriptionForIQNotFound = (query) => (
+exports.buildError = (from, to, description) => (
   {
-    errorCode: JSONGLE_IQ_ERROR_RESPONSE.IQ_NOT_FOUND,
+    id: generateNewId(),
+    from: from,
+    to: to,
+    jsongle: {
+      action: JSONGLE_MESSAGE_TYPE.ERROR,
+      description,
+    },
+  }
+)
+
+exports.describeIQNotFound = (query) => (
+  {
+    errorCode: JSONGLE_ERROR_CODE.NOT_FOUND,
     errorDetails: `The query '${query}' is not supported`
   }
 );
+
+exports.describeErrorHello = (details) => (
+  {
+    errorCode: JSONGLE_ERROR_CODE.BAD_PARAMETERS,
+    errorDetails: details
+  }
+)
+
+exports.isHelloValid = (hello) => {
+  if (!hello || !hello.uid) {
+    return false;
+  }
+  return true;
+}
 

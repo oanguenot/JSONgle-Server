@@ -3,11 +3,12 @@ exports.COMMON = {
 }
 
 exports.JSONGLE_MESSAGE_TYPE = {
-  SESSION_HELLO: 'session-hello',
-  SESSIOn_JOINED: 'session-joined',
   IQ_SET: 'iq-set',
+  IQ_GET: 'iq-get',
   IQ_ERROR: 'iq-error',
-  IQ_RESULT: 'iq-result'
+  IQ_RESULT: 'iq-result',
+  ERROR: 'session-error',
+  ACK: 'ack',
 };
 
 exports.JSONGLE_IQ_ERROR_RESPONSE = {
@@ -16,7 +17,7 @@ exports.JSONGLE_IQ_ERROR_RESPONSE = {
 }
 
 exports.JSONGLE_IQ_QUERY = {
-  REGISTER: 'register'
+  HELLO: 'session-hello',
 }
 
 exports.JSONGLE_ERROR_CODE = {

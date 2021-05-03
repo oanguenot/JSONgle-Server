@@ -1,6 +1,140 @@
-#JSONGLE-Server
+# JSONgle-Server
+
+**JSONgle-Server** is a signaling server that can be use to exchange messages between peers by using a light **JSON-based** protocol.
+
+This library is the server-side companion of the [JSONgle](https://github.com/oanguenot/JSONgle) browser library.
+
+## Install
+
+Using NPM
+
+```bash
+$ npm install jsongle-server
+```
+
+## Configuration
+
+**JSONgle-Server** reads its configuration from an **.env** file.
+
+```bash
+wsPort=8080
+restPort=8081
+corsPolicyOrigin=https://localhost:3000
+maxConcurrentUsers=10
+logLevel=debug
+id=barracuda
+logPath=/tmp/jsongle-server.log
+```
+
+The **.env** file contains the following settings
+
+| Settings | Description |
+|:---------|:------------|
+| **wsPort** | WebSocket Server Port<br>Default is `8080` |
+| **restPort** | HTTP REST API Server Port <br>Default is `8081` |
+| **corsPolicyOrigin** | Restricted CORS policy access |
+| **maxConcurrentUsers** | Max number of connection to the WebSocket server<br>Default is `50` |
+| **logLevel** | Level of logs<br>Default is `info` |
+| **id** | Server identifier<br> Default is `jsongle-server` |
+| **logPath** | Path to file for storing logs. No logs stored by default |
 
 
+## Main principles
+
+The **JSONgle-Server** has two 'end-points':
+
+- A REST API used to monitor the server
+
+- A WebSocket server that listens to incoming WebSocket connections and handle the signaling part
+
+## Monitoring JSONgle-Server
+
+Basically, **JSONgle-Server** offers the following APIs:
+
+- **GET /about**: This API returns a JSON description of the server containing the version used and a description
+
+- **GET /ping**: This API returns a JSON `OK` status
+
+- **PUT /logs/levels**: This API expects a JSON object containing a `level` property for updating the log level. Expected values are as usual: `debug`, `info`, etc...
+
+- **GET /metrics**: This API returns a **Prometheus** metrics when requested. 
+
+These APIs allow to monitor the **JSONgle-Server** in real-time.
+
+## Serving the signaling part
+
+For exchanging the signaling part, client should be connected to the WebSocket and exchange formatted messages that follow the [**JSONgle**](https://github.com/oanguenot/JSONgle) protocol.
+
+Here are the messages handled by the server in some specific situations.
+
+### session-hello message
+
+When a connection is set to the WebSocket server, **JSONgle-Server** sends back to the client the following query
+
+```js
+{
+  "id": "...",
+  "from": "barracuda", 
+    "to": "8e784de9-ba76-4b0f-bedf-e21cac593f75",  // Server side identity that should be used for any message coming from that client
+    "jsongle": {
+      "action": "iq-get",
+      "query": "session-hello",
+      "transaction": "8c4feab5-71a0-41c6-8bcd-e21cac593f75"
+      "description": {
+        "version": "1.1.4",
+        "sn": "barracuda",
+        "info": "Easy signaling using JSONgle-Server",
+      },
+    },
+}
+```
+
+The client should answer by the following message
+
+```js
+{
+  "id": "...",
+  "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
+    "to": "barracuda",
+    "jsongle": {
+      "action": "iq-result",
+      "query": "session-hello",
+      "transaction": "8c4feab5-71a0-41c6-8bcd-e21cac593f75"
+      "description": {
+        "uid": "user_7000",     // Any unique identifier given by the client (Mandatory)
+        "dn": "Jon Doe"         // Any user distinguish name (Optional)
+      },
+    },
+}
+```
+
+An `ack` message with then be sent to the client to inform him that its response has been received. In case of error, a `session-error` message is sent too.
+
+_Note_: Next client requests will be treated only if client has sent this `iq-result` response.
+
+### Join a room
+
+To join a room for having a call or a conversation, the client should send the following message
+
+```js
+{
+  "id": "9b2feab5-71a0-41c6-8bcd-de67b819fdca",
+  "from": "user_70000", 
+    "to": "barracuda",  // generated id (client is anonymous at that time)
+    "jsongle": {
+      "action": "iq-set",
+      "query": "join",
+      "description": {
+        "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777", // arbitrary room name known by clients who want to have a call or conversation
+        "dn": "Jon Doe",
+      },
+    },
+}
+
+
+```
+
+The 
 
 ## Roadmap
 
@@ -78,10 +212,3 @@ socket.on("jsongle", (message) => {
     }
 });
 ```
-
-### session-hello
-
-
-### session-register
-
---> can fail
