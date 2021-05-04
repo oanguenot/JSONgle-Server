@@ -17,13 +17,13 @@ exports.describeJoined = (description) => (
   }
 );
 
-exports.buildIQ = (from, to, iqType, transaction, query, description) => (
+exports.buildIQ = (from, to, action, transaction, query, description) => (
   {
     id: generateNewId(),
-    from: from,
-    to: to,
+    from,
+    to,
     jsongle: {
-      action: iqType,
+      action,
       query,
       transaction,
       description,
@@ -31,13 +31,14 @@ exports.buildIQ = (from, to, iqType, transaction, query, description) => (
   }
 );
 
-exports.buildAck = (from, to, transaction) => (
+exports.buildAck = (from, to, status, transaction) => (
   {
     id: generateNewId(),
     from: from,
     to: to,
     jsongle: {
       action: JSONGLE_MESSAGE_TYPE.ACK,
+      status,
       transaction
     }
   }
@@ -75,4 +76,18 @@ exports.isHelloValid = (hello) => {
   }
   return true;
 }
+
+exports.buildEvent = (from, to, namespace, event, description) => (
+  {
+    id: generateNewId(),
+    from: from,
+    to: to,
+    jsongle: {
+      action: JSONGLE_MESSAGE_TYPE.EVENT,
+      namespace,
+      event,
+      description,
+    },
+  }
+);
 

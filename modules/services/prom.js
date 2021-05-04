@@ -34,7 +34,6 @@ var users = new client.Gauge({
 users.set(0);
 
 exports.collect = () => {
-  console.log("collect default metrics")
   const collectDefaultMetrics = client.collectDefaultMetrics;
   const Registry = client.Registry;
   registry = new Registry();

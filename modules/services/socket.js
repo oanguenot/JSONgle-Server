@@ -1,8 +1,8 @@
 const { info, warning, error } = require("./logger");
 const { addUsersCounter, minusUsersCounter } = require("./prom");
 const package = require('../../package.json');
-const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, buildAck } = require("../helpers/jsongle");
-const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_ERROR_RESPONSE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE } = require("../helpers/helper");
+const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, buildAck, buildEvent } = require("../helpers/jsongle");
+const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_ERROR_RESPONSE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 const { generateNewId } = require("../helpers/common");
 
 const users = {};
@@ -13,46 +13,48 @@ const DEFAULT_MAX_CONCURRENT_USERS = 50;
 
 exports.listen = (io) => {
 
-  const registerUserToRoom = async (description, socket) => {
-
+  const registerUserToRoom = async (message, socket) => {
     return new Promise(async (resolve, reject) => {
-      const { rid, uid, dn } = description;
+      const { jsongle } = message;
+      const { description } = jsongle;
+      const { rid } = description;
     
-      if (!rid || !uid || !dn) {
-        warning(`${moduleName} can't register - missing parameter`);
+      if (!rid) {
+        warning(`${moduleName} can't join - missing parameter`);
         reject({
-          query: JSONGLE_IQ_ERROR_RESPONSE.REGISTRATION_FAILED,
+          query: JSONGLE_IQ_ERROR_RESPONSE.SESSION_JOIN_FAILED,
           description: {
             errorCode: JSONGLE_ERROR_CODE.BAD_PARAMETERS,
-            errorDetails: 'Missing rid, uid or dn parameter'
+            errorDetails: "Missing 'rid' parameter"
           }
         })
         return;
       }
 
-      info(`${moduleName} register ${uid} to room ${rid}`);
+      const mappedClients = io.sockets.adapter.rooms.get(rid);
 
-      const usersInRoom = await io.sockets(rid);
-      info(`${moduleName} ${usersInRoom} person(s) already in room ${rid}`);
+      const members = [];
+      if (!mappedClients) {
+        info(`${moduleName} no other person in room ${rid}`);
+      } else {
+        info(`${moduleName} ${mappedClients.size} persons already in room ${rid}`);
+        mappedClients.forEach((id) => {
+          const client = io.of('/').sockets.get(id);
+          client.emit(COMMON.JSONGLE, buildEvent(process.env.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.JOINED, { member: socket.data, rid }))
+          members.push(client.data);
+        });
+      }
 
-      socket.data = description;
-
-      info(`${moduleName} joined room ${rid}`);
+      info(`${moduleName} ${socket.id} joined room ${rid}`);
       socket.join(rid);
 
-      const joined = [];
-
-      usersInRoom.forEach(existingSocket => {
-        existingSocket.emit(COMMON.JSONGLE, sessionJoined(process.env.id, existingSocket.data.uid, description));
-        joined.push(existingSocket.data);
-      });
-
       resolve({
-        query: JSONGLE_MESSAGE_TYPE.IQ_RESULT,
+        query: JSONGLE_IQ_QUERY.JOIN,
         description: {
-          joined
+          members,
+          rid
         }
-      })
+      });
     })
   }
 
@@ -62,16 +64,16 @@ exports.listen = (io) => {
     const { jsongle } = message;
 
     switch (jsongle.query) {
-      case JSONGLE_IQ_QUERY.REGISTER:
+      case JSONGLE_IQ_QUERY.JOIN:
         try {
-          const result = await registerUserToRoom(jsongle.description, socket);
-          socket.emit(COMMON.JSONGLE, iqResult(message.to, message.from, jsongle.transaction, result.query, result.description));
+          const result = await registerUserToRoom(message, socket);
+          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_RESULT, jsongle.transaction, result.query, result.description));
         } catch (err) {
-          socket.emit(COMMON.JSONGLE, iqError(message.to, message.from, jsongle.transaction, err.query, err.description));
+          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, err.query, err.description));
         }
         break;
       default:
-        socket.emit(COMMON.JSONGLE, iqError(message.to, message.from, jsongle.transaction, JSONGLE_IQ_ERROR_RESPONSE.IQ_NOT_FOUND, descriptionForIQNotFound(jsongle.query)))
+        socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, JSONGLE_IQ_ERROR_RESPONSE.IQ_NOT_FOUND, descriptionForIQNotFound(jsongle.query)))
     }
   }
 
@@ -84,7 +86,7 @@ exports.listen = (io) => {
       case JSONGLE_IQ_QUERY.HELLO:
         if (!isHelloValid(jsongle.description)) {
           error(`${moduleName} no 'uid' parameter set`);
-          socket.emit(COMMON.JSONGLE, buildAck(process.env.id, message.from, jsongle.transaction));
+          socket.emit(COMMON.JSONGLE, buildAck(process.env.id, message.from, JSONGLE_ACK_VALUE.FAILED, jsongle.transaction));
           socket.emit(COMMON.JSONGLE, buildError(process.env.id, message.from, describeErrorHello("Missing 'uid' parameter")));
           return;
         }
@@ -92,7 +94,7 @@ exports.listen = (io) => {
         // Store user identification information
         socket.data = jsongle.description;
         info(`${moduleName} user ${jsongle.description.uid} associated to socket ${socket.id}`);
-        socket.emit(COMMON.JSONGLE, buildAck(process.env.id, message.from, jsongle.transaction));
+        socket.emit(COMMON.JSONGLE, buildAck(process.env.id, message.from, JSONGLE_ACK_VALUE.SUCCESS, jsongle.transaction));
         break;
       default:
     }
