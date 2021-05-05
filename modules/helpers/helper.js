@@ -16,19 +16,17 @@ exports.JSONGLE_EVENTS_NAMESPACE = {
   ROOM: 'room'
 }
 
-exports.JSONGLE_IQ_ERROR_RESPONSE = {
-  SESSION_JOIN_FAILED: 'session-join-failed',
-  IQ_NOT_FOUND: 'iq-not-found'
-}
-
 exports.JSONGLE_IQ_QUERY = {
   HELLO: 'session-hello',
-  JOIN: 'session-join'
+  JOIN: 'session-join',
+  LEAVE: 'session-leave',
 }
 
 exports.JSONGLE_ERROR_CODE = {
   BAD_PARAMETERS: 400001,
-  NOT_FOUND: 404001
+  FORBIDDEN_FULL: 403001,
+  NOT_FOUND: 404001,
+  MEMBER_NOT_FOUND: 404002
 }
 
 exports.JSONGLE_ACK_VALUE = {
@@ -39,5 +37,5 @@ exports.JSONGLE_ACK_VALUE = {
 
 exports.JSONGLE_ROOM_EVENTS = {
   JOINED: 'joined',
-  LEAVED: 'leaved'
+  LEFT: 'left'
 }

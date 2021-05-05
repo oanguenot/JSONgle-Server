@@ -2,7 +2,7 @@ const { info, warning, error } = require("./logger");
 const { addUsersCounter, minusUsersCounter } = require("./prom");
 const package = require('../../package.json');
 const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, buildAck, buildEvent } = require("../helpers/jsongle");
-const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_ERROR_RESPONSE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
+const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 const { generateNewId } = require("../helpers/common");
 
 const users = {};
@@ -22,22 +22,27 @@ exports.listen = (io) => {
       if (!rid) {
         warning(`${moduleName} can't join - missing parameter`);
         reject({
-          query: JSONGLE_IQ_ERROR_RESPONSE.SESSION_JOIN_FAILED,
-          description: {
             errorCode: JSONGLE_ERROR_CODE.BAD_PARAMETERS,
-            errorDetails: "Missing 'rid' parameter"
-          }
+          errorDetails: "Missing 'rid' parameter"
         })
         return;
       }
 
       const mappedClients = io.sockets.adapter.rooms.get(rid);
 
+      if (mappedClients && mappedClients.size >= process.env.maxMembersPerRoom) {
+        warning(`${moduleName} can't join - already ${mappedClients.size} persons in room ${rid}`);
+        reject({
+          errorCode: JSONGLE_ERROR_CODE.FORBIDDEN_FULL,
+          errorDetails: "Max number of members per room already reached"
+        })
+        return;
+      }
+
+      info(`${moduleName} ${mappedClients ? mappedClients.size : 0} member(s) already in room ${rid}`);
+
       const members = [];
-      if (!mappedClients) {
-        info(`${moduleName} no other person in room ${rid}`);
-      } else {
-        info(`${moduleName} ${mappedClients.size} persons already in room ${rid}`);
+      if (mappedClients) {
         mappedClients.forEach((id) => {
           const client = io.of('/').sockets.get(id);
           client.emit(COMMON.JSONGLE, buildEvent(process.env.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.JOINED, { member: socket.data, rid }))
@@ -49,12 +54,55 @@ exports.listen = (io) => {
       socket.join(rid);
 
       resolve({
-        query: JSONGLE_IQ_QUERY.JOIN,
-        description: {
           members,
-          rid
-        }
+        rid
       });
+    })
+  }
+
+  unregisterUserFromRoom = async (message, socket) => {
+    return new Promise(async (resolve, reject) => {
+      const { jsongle } = message;
+      const { description } = jsongle;
+      const { rid } = description;
+
+      if (!rid) {
+        warning(`${moduleName} can't leave - missing parameter`);
+        reject({
+          errorCode: JSONGLE_ERROR_CODE.BAD_PARAMETERS,
+          errorDetails: "Missing 'rid' parameter"
+        })
+        return;
+      }
+
+      let mappedClients = io.sockets.adapter.rooms.get(rid);
+
+      if (!mappedClients || !mappedClients.has(socket.id)) {
+        warning(`${moduleName} can't leave - user ${socket.id} not in room ${rid}`);
+        reject({
+          errorCode: JSONGLE_ERROR_CODE.MEMBER_NOT_FOUND,
+          errorDetails: `Not member of room ${rid}`
+        })
+        return;
+      }
+
+      socket.leave(rid);
+      info(`${moduleName} ${socket.id} left room ${rid}`);
+
+      mappedClients = io.sockets.adapter.rooms.get(rid);
+      info(`${moduleName} ${mappedClients ? mappedClients.size : 0} member(s) still in room ${rid}`);
+
+      if (mappedClients) {
+        mappedClients.forEach((id) => {
+          const client = io.of('/').sockets.get(id);
+          client.emit(COMMON.JSONGLE, buildEvent(process.env.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid }))
+        });
+      }
+
+      resolve({
+        rid
+      });
+
     })
   }
 
@@ -67,13 +115,21 @@ exports.listen = (io) => {
       case JSONGLE_IQ_QUERY.JOIN:
         try {
           const result = await registerUserToRoom(message, socket);
-          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_RESULT, jsongle.transaction, result.query, result.description));
+          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_RESULT, jsongle.transaction, jsongle.query, result));
         } catch (err) {
-          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, err.query, err.description));
+          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, jsongle.query, err));
+        }
+        break;
+      case JSONGLE_IQ_QUERY.LEAVE:
+        try {
+          const result = await unregisterUserFromRoom(message, socket);
+          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_RESULT, jsongle.transaction, jsongle.query, result));
+        } catch (err) {
+          socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, jsongle.query, err));
         }
         break;
       default:
-        socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, JSONGLE_IQ_ERROR_RESPONSE.IQ_NOT_FOUND, descriptionForIQNotFound(jsongle.query)))
+        socket.emit(COMMON.JSONGLE, buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, jsongle.query, descriptionForIQNotFound(jsongle.query)))
     }
   }
 
