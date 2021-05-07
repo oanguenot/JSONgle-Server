@@ -1,8 +1,8 @@
 const { info, warning, error } = require("./logger");
 const { addUsersCounter, minusUsersCounter } = require("./prom");
 const package = require('../../package.json');
-const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, buildAck, buildEvent } = require("../helpers/jsongle");
-const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
+const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, buildAck, buildEvent, buildSessionInfo, describeGenericError } = require("../helpers/jsongle");
+const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_QUERY, COMMON, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS, JSONGLE_SESSION_INFO_REASON } = require("../helpers/helper");
 const { generateNewId } = require("../helpers/common");
 
 const users = {};
@@ -156,6 +156,38 @@ exports.listen = (io) => {
     }
   }
 
+  handlePropose = async (message, socket) => {
+    handleMessageToRelayInRoom(message, socket, () => {
+      socket.emit(COMMON.JSONGLE, buildSessionInfo(process.env.id, message.from, message.jsongle.sid, message.jsongle.initiator, message.jsongle.responder, JSONGLE_SESSION_INFO_REASON.TRYING, { tried: new Date().toJSON() }));
+    });
+  }
+
+  handleMessageToRelayInRoom = async (message, socket, callback) => {
+    info(`${moduleName} on ${message.jsongle.action} for room ${message.to}`);
+
+    // Tests if client is in room 'message.to'
+    if (!socket.rooms.has(message.to)) {
+      socket.emit(COMMON.JSONGLE, buildError(process.env.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.NOT_PART, `Can't call - not in room ${message.to}`)));
+      return;
+    }
+
+    // Tests if there is a recipient
+    const members = io.sockets.adapter.rooms.get(message.to);
+    if (members.size < 2) {
+      // No recipient reachable
+      socket.emit(COMMON.JSONGLE, buildSessionInfo(process.env.id, message.from, message.jsongle.sid, message.jsongle.initiator, message.jsongle.responder, JSONGLE_SESSION_INFO_REASON.UNREACHABLE, { ended: new Date().toJSON() }));
+      return;
+    }
+
+    message.from = message.to;
+    info(`${moduleName} forward ${message.jsongle.action} to members of room ${message.to}`);
+    socket.to(message.to).emit("jsongle", message);
+
+    if (callback) {
+      callback();
+    }
+  }
+
   // Middleware for limiting users
   io.use((socket, next) => {
     if (io.engine.clientsCount >= (process.env.maxConcurrentUsers || DEFAULT_MAX_CONCURRENT_USERS)) {
@@ -200,66 +232,20 @@ exports.listen = (io) => {
 
       const actions = {
         [JSONGLE_MESSAGE_TYPE.IQ_SET]: handleIQ,
-        [JSONGLE_MESSAGE_TYPE.IQ_RESULT]: handleIQResult
+        [JSONGLE_MESSAGE_TYPE.IQ_RESULT]: handleIQResult,
+        [JSONGLE_MESSAGE_TYPE.PROPOSE]: handlePropose,
+        [JSONGLE_MESSAGE_TYPE.INFO]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.PROCEED]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.INITIATE]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.TRANSPORT]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.DECLINE]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.RETRACT]: handleMessageToRelayInRoom
       };
 
       if (message.jsongle.action in actions) {
         actions[message.jsongle.action](message, socket);
       }
 
-      // TODO refactor
-      // if (!(message.to in users)) {
-      //   const abortMsg = {
-      //     id: generateNewId(),
-      //     from: "server",
-      //     to: message.from,
-      //     jsongle: {
-      //       sid: message.jsongle.sid,
-      //       action: "session-info",
-      //       reason: "unreachable",
-      //       initiator: message.jsongle.initiator,
-      //       responder: message.jsongle.responder,
-      //       description: {
-      //         ended: new Date().toJSON(),
-      //       },
-      //     },
-      //   };
-
-        // Send a try to issuer
-        //socket.emit("jsongle", abortMsg);
-        //return;
-      //}
-
-      // TODO: refactor
-      // if (message.jsongle.action === "session-propose") {
-      //   const tryMsg = {
-      //     id: generateNewId(),
-      //     from: "server",
-      //     to: message.from,
-      //     jsongle: {
-      //       sid: message.jsongle.sid,
-      //       action: "session-info",
-      //       reason: "trying",
-      //       initiator: message.jsongle.initiator,
-      //       responder: message.jsongle.responder,
-      //       description: {
-      //         tried: new Date().toJSON(),
-      //         media: message.jsongle.media,
-      //         additional_data: {
-      //           initiator_name: "",
-      //           initiator_photo: "",
-      //           session_object: "",
-      //         },
-      //       },
-      //     },
-      //   };
-
-      //   // Send a try to issuer
-      //   socket.emit("jsongle", tryMsg);
-      // }
-
-      // Forward message to responder
-      //io.to(users[message.to]).emit("jsongle", message);
     });
   });
 

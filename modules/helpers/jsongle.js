@@ -1,5 +1,5 @@
 const { generateNewId } = require("./common");
-const { JSONGLE_ERROR_CODE, JSONGLE_MESSAGE_TYPE } = require('./helper');
+const { JSONGLE_ERROR_CODE, JSONGLE_MESSAGE_TYPE, JSONGLE_SESSION_INF0_REASON: JSONGLE_SESSION_INFO_REASON } = require('./helper');
 
 exports.describeHello = (serverId, serverVersion, serverDescription) => (
   {
@@ -56,6 +56,22 @@ exports.buildError = (from, to, description) => (
   }
 )
 
+exports.buildSessionInfo = (from, to, sid, initiator, responder, reason, description) => (
+  {
+    id: generateNewId(),
+    from,
+    to,
+    jsongle: {
+      sid: sid,
+      action: JSONGLE_MESSAGE_TYPE.INFO,
+      reason,
+      initiator: initiator,
+      responder: responder,
+      description,
+    }
+  }
+)
+
 exports.describeIQNotFound = (query) => (
   {
     errorCode: JSONGLE_ERROR_CODE.NOT_FOUND,
@@ -67,6 +83,13 @@ exports.describeErrorHello = (details) => (
   {
     errorCode: JSONGLE_ERROR_CODE.BAD_PARAMETERS,
     errorDetails: details
+  }
+)
+
+exports.describeGenericError = (errorCode, errorDetails) => (
+  {
+    errorCode,
+    errorDetails
   }
 )
 
