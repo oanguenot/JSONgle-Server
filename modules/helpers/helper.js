@@ -16,7 +16,9 @@ exports.JSONGLE_MESSAGE_TYPE = {
   INITIATE: 'session-initiate',
   TRANSPORT: 'transport-info',
   DECLINE: 'session-decline',
-  RETRACT: 'session-retract'
+  RETRACT: 'session-retract',
+  ACCEPT: 'session-accept',
+  TERMINATE: 'session-terminate',
 };
 
 exports.JSONGLE_SESSION_INFO_REASON = {

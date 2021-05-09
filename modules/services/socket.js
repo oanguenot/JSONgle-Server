@@ -239,11 +239,15 @@ exports.listen = (io) => {
         [JSONGLE_MESSAGE_TYPE.INITIATE]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.TRANSPORT]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.DECLINE]: handleMessageToRelayInRoom,
-        [JSONGLE_MESSAGE_TYPE.RETRACT]: handleMessageToRelayInRoom
+        [JSONGLE_MESSAGE_TYPE.RETRACT]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.ACCEPT]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.TERMINATE]: handleMessageToRelayInRoom,
       };
 
       if (message.jsongle.action in actions) {
         actions[message.jsongle.action](message, socket);
+      } else {
+        error(`${moduleName} action ${message.jsongle.action} not handled`);
       }
 
     });
