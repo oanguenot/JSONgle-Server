@@ -17,16 +17,17 @@ const log = bunyan.createLogger({
     streams: [
         {
             name: 'console',
-            level: 'info',
+            level: process.env.logDefaultLevel || 'warn',
             stream: process.stdout,
             type: 'stream',
         },
         {
             name: 'file',
             type: 'rotating-file',
+            level: 'debug',
             path: process.env.logPath || '/tmp/jsongle-server.log',
-            period: '1d',   // daily rotation
-            count: 3        // keep 3 back copies
+            period: process.env.logFilePeriod || '1d',   // daily rotation
+            count: process.env.logFilesNumber || 3,       // keep 3 back copies
         }]
 });
 

@@ -21,9 +21,11 @@ wsPort=8080
 restPort=8081
 corsPolicyOrigin=https://localhost:3000
 maxConcurrentUsers=10
-logLevel=debug
 id=barracuda
+logDefaultLevel=debug
 logPath=/tmp/jsongle-server.log
+logFilesNumber=3
+logFilePeriod=1d
 ```
 
 The **.env** file contains the following settings
@@ -34,10 +36,11 @@ The **.env** file contains the following settings
 | **restPort** | HTTP REST API Server Port <br>Default is `8081` |
 | **corsPolicyOrigin** | Restricted CORS policy access |
 | **maxConcurrentUsers** | Max number of connection to the WebSocket server<br>Default is `50` |
-| **logLevel** | Level of logs<br>Default is `info` |
 | **id** | Server identifier<br> Default is `jsongle-server` |
-| **logPath** | Path to file for storing logs. No logs stored by default |
-
+| **logDefaultLevel** | Level of logs<br>Default is `warn`.  |
+| **logPath** | Path to file for storing logs. No logs stored by default. Level is always equals to `debug` |
+| **logFilesNumber** | Number of old log files kept. Default is `3` |
+| **logFilePeriod** | Period of logging before changing to a new file. Default is `1d` |
 
 ## Main principles
 

@@ -22,7 +22,7 @@ const initialize = () => {
 
     info(`Started instance ${process.env.id}`);
 
-    setLevelTo(process.env.logLevel);
+    setLevelTo(process.env.logDefaultLevel);
     debug("Log level set to ", { 'level': getLogLevel() });
 
     debug("Initialize morgan");
