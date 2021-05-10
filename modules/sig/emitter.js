@@ -19,7 +19,6 @@ exports.emitMessage = (message, socket, io, toAll = false) => {
         }
       });
     }
-    //socket.to(message.to).emit(COMMON.JSONGLE, message);
   } else {
     debug({ module: moduleName, method: "SEND", message });
     socket.emit(COMMON.JSONGLE, message);

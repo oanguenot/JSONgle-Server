@@ -141,12 +141,8 @@ The `iq_result` contains the list of users already in the room.
 
 All existing members of that room will receive a `session-event` message to inform them about the new member.
 
-## Roadmap
 
-Future evolutions or questions:
-- Keep Socket.io or rely on single agnostic socket library only
-- Bunyan: add a stream for rotating file
-
+## Specific messages
 
 ### Unreachable recipient
 
