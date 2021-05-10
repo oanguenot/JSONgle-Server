@@ -13,45 +13,46 @@ const options = {
     cert: fs.readFileSync('./certificates/server.crt')
 };
 
+const moduleName = "server";
+
 const initialize = () => {
 
-    info("---------------- JSONGLE-SERVER started!");
-
-    debug("Read env config");
     dotenv.config();
-
-    info(`Started instance ${process.env.id}`);
-
     setLevelTo(process.env.logDefaultLevel);
     debug("Log level set to ", { 'level': getLogLevel() });
 
-    debug("Initialize morgan");
+    debug({ module: moduleName, label: "---------------------------------------------------------------------" });
+    info({ module: moduleName, label: "welcome to JSONgle-Server!" });
+
+    info({ module: moduleName, label: `initialize instance ${process.env.id}...` });
+
+    debug({ module: moduleName, label: "initialize morgan" });
     morgan(":method :url :status :res[content-length] - :response-time ms");
 
-    debug("Initialize express");
+    debug({ module: moduleName, label: "initialize express" });
     const app = express();
 
-    debug("Set cors");
+    debug({ module: moduleName, label: "set cors" });
     app.use(cors());
 
-    debug("Setup middleware for metrics");
+    debug({ module: moduleName, label: "setup middleware for metrics" });
     app.use(requestCounters);
     app.use(responseCounters);
 
-    debug(`Setup REST API server on port ${process.env.restPort}`);
+    debug({ module: moduleName, label: `setup REST API server on port ${process.env.restPort}` });
     const restServer = require('https').createServer(options, app);
     restServer.listen(8081, () => {
-        debug(`REST API server started! successfully on port ${process.env.restPort}`);
+        debug({ module: moduleName, label: `REST API server started successfully on port ${process.env.restPort}` });
     });
 
-    debug("Setup routes for API server");
+    debug({ module: moduleName, label: "setup routes for API server" });
     require('./modules/routes/serviceability')(app);
     require('./modules/routes/metrics')(app);
 
-    debug("Start collecting metrics");
+    debug({ module: moduleName, label: "start collecting metrics" });
     collect();
 
-    debug(`Setup WebSocket server on port ${process.env.wsPort}`);
+    debug({ module: moduleName, label: `setup webSockets server on port ${process.env.wsPort}` });
     const wsServer = require('https').createServer(options);
     const io = require('socket.io')(wsServer, {
         cors: {
@@ -62,12 +63,14 @@ const initialize = () => {
     });
     socket.listen(io);
     wsServer.listen(process.env.wsPort, () => {
-        debug(`WebSocket server started successfully on port ${process.env.wsPort}!`);
+        debug({ module: moduleName, label: `webSockets server started successfully on port ${process.env.wsPort}` });
     });
+
+    info({ module: moduleName, label: `initialization done!` });
 }
 
 initialize();
 
 process.once("SIGHUP", function () {
-    debug("process restarted");
+    debug({ module: moduleName, label: "process restarted" });
 })
