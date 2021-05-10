@@ -8,11 +8,6 @@ const fs = require('fs');
 const socket = require('./modules/services/socket');
 const { collect, requestCounters, responseCounters } = require("./modules/services/prom");
 
-const options = {
-    key: fs.readFileSync('./certificates/server.key'),
-    cert: fs.readFileSync('./certificates/server.crt')
-};
-
 const moduleName = "server";
 
 const initialize = () => {
@@ -38,6 +33,11 @@ const initialize = () => {
     debug({ module: moduleName, label: "setup middleware for metrics" });
     app.use(requestCounters);
     app.use(responseCounters);
+
+    const options = {
+        key: fs.readFileSync(String(process.env.key)),
+        cert: fs.readFileSync(String(process.env.cert))
+    };
 
     debug({ module: moduleName, label: `setup REST API server on port ${process.env.restPort}` });
     const restServer = require('https').createServer(options, app);
