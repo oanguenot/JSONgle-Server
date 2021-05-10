@@ -1,7 +1,7 @@
 {
   "name": "jsongle-server",
-  "description": "Easy signaling using JSONgle-Server",
-  "version": "1.0.0",
+  "description": "JSONgle Server for WebRTC signaling protocol",
+  "version": "1.0.1",
   "engines": {
     "node": "*"
   },

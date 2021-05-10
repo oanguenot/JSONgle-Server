@@ -1,13 +1,14 @@
 const { setLevelTo, getLogLevel } = require("../services/logger");
+const package = require('../../package.json');
 
 module.exports = (app, q) => {
 
   app.get('/about', async (req, res) => {
-    res.status(200).json({ name: 'jsongle-server', version: '1.0', description: 'JSONgle Server for WebRTC signaling protocol' })
+    res.status(200).json({ name: package.name, version: package.version, description: package.description });
   });
 
   app.get('/ping', async (req, res) => {
-    res.status(200).json({ "status": "OK" })
+    res.status(200).json({ "status": "OK" });
   });
 
   app.put('/logs/levels', (req, res) => {
