@@ -1,20 +1,36 @@
 # JSONgle-Server
 
-**JSONgle-Server** is a signaling server that can be use to exchange messages between peers by using a light **JSON-based** protocol.
+**JSONgle-Server** is a WebRTC signaling server allowing users to have a WebRTC call. The signaling protocol used is based on [JSONgle](https://github.com/oanguenot/JSONgle) which use JSON to describe the message exchanged.
 
-This library is the server-side companion of the [JSONgle](https://github.com/oanguenot/JSONgle) browser library.
+**JSONgle-Server** allows to
+- Connect clients to a dedicated room
+- Send room 'joined' and 'left' events
+- Handle WebRTC signaling protocol between members of a room
+- Handle custom JSON messages between members of a room
+- Handle chat messages between members of a room (planned)
+- Handle audio & video conference (planned)
 
 ## Install
 
-Using NPM
+**JSONgle-Server** is a Node.JS server that can be installed by cloning the repository.
 
-```bash
-$ npm install jsongle-server
+```sh
+$ git clone https://github.com/oanguenot/JSONgle-Server
+```
+
+Then you need to install the dependencies
+
+```sh
+$ yarn install
+
+or
+
+$ npm install
 ```
 
 ## Configuration
 
-**JSONgle-Server** reads its configuration from an **.env** file.
+**JSONgle-Server** reads its configuration from an **.env** file. Here is an example of configuration.
 
 ```bash
 wsPort=8080
@@ -26,6 +42,9 @@ logDefaultLevel=debug
 logPath=/tmp/jsongle-server.log
 logFilesNumber=3
 logFilePeriod=1d
+key=./certificates/server.key
+cert=./certificates/server.crt
+appToken="d4fr34....b7b8733b384"
 ```
 
 The **.env** file contains the following settings
@@ -34,13 +53,27 @@ The **.env** file contains the following settings
 |:---------|:------------|
 | **wsPort** | WebSocket Server Port<br>Default is `8080` |
 | **restPort** | HTTP REST API Server Port <br>Default is `8081` |
-| **corsPolicyOrigin** | Restricted CORS policy access |
+| **corsPolicyOrigin** | Restricted CORS policy access.<br>Default is `''` |
 | **maxConcurrentUsers** | Max number of connection to the WebSocket server<br>Default is `50` |
 | **id** | Server identifier<br> Default is `jsongle-server` |
 | **logDefaultLevel** | Level of logs<br>Default is `warn`.  |
 | **logPath** | Path to file for storing logs. No logs stored by default. Level is always equals to `debug` |
 | **logFilesNumber** | Number of old log files kept. Default is `3` |
 | **logFilePeriod** | Period of logging before changing to a new file. Default is `1d` |
+
+## Start JSONgle-Server
+
+For testing purpose or in your development/integration environment, you can launch the following command:
+
+```sh
+$ yarn dev
+
+or 
+
+$ npm run dev
+```
+
+The server will be automatically restarted thanks to **nodemon**.
 
 ## Main principles
 
