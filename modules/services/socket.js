@@ -21,6 +21,18 @@ exports.listen = (io) => {
     next();
   });
 
+  //Middleware for checking the secret token
+  io.use((socket, next) => {
+    const { handshake } = socket;
+    const { auth } = handshake;
+
+    if (!auth || !auth.secretToken || auth.secretToken !== process.env.secretToken) {
+      error({ module: moduleName, label: `${socket.id} disconnected - bad token provided` });
+      socket.disconnect(true);
+    }
+    next();
+  });
+
   // Handle clients connection
   io.sockets.on("connection", (socket, pseudo) => {
     info({ module: moduleName, label: `new user connected ${socket.id}` });
