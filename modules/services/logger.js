@@ -1,4 +1,7 @@
 const bunyan = require("bunyan");
+const { CONFIG } = require("./config");
+
+let log = null;
 
 function messageSerializer(req) {
     return {
@@ -8,28 +11,32 @@ function messageSerializer(req) {
     }
 }
 
+exports.createLogger = () => {
 
-const log = bunyan.createLogger({
-    name: "jsongle-server",
-    serializers: {
-        req: messageSerializer
-    },
-    streams: [
-        {
-            name: 'console',
-            level: process.env.logDefaultLevel || 'warn',
-            stream: process.stdout,
-            type: 'stream',
+    console.log(">>>", CONFIG())
+
+    log = bunyan.createLogger({
+        name: "jsongle-server",
+        serializers: {
+            req: messageSerializer
         },
-        {
-            name: 'file',
-            type: 'rotating-file',
-            level: 'debug',
-            path: process.env.logPath || '/tmp/jsongle-server.log',
-            period: process.env.logFilePeriod || '1d',   // daily rotation
-            count: process.env.logFilesNumber || 3,       // keep 3 back copies
-        }]
-});
+        streams: [
+            {
+                name: 'console',
+                level: CONFIG().logDefaultLevel || 'warn',
+                stream: process.stdout,
+                type: 'stream',
+            },
+            {
+                name: 'file',
+                type: 'rotating-file',
+                level: 'debug',
+                path: CONFIG().logPath || '/tmp/jsongle-server.log',
+                period: CONFIG().logFilePeriod || '1d',   // daily rotation
+                count: CONFIG().logFilesNumber || 3,       // keep 3 back copies
+            }]
+    });
+}
 
 exports.info = (message, data) => {
     if (data) {

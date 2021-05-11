@@ -4,6 +4,7 @@ const { generateNewId } = require("../helpers/common");
 const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, buildAck, buildEvent } = require("../helpers/jsongle");
 const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_QUERY, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 const { emitMessage } = require('./emitter');
+const { CONFIG } = require('../services/config');
 
 const moduleName = "sig:iq";
 
@@ -24,7 +25,7 @@ const registerUserToRoom = async (message, socket, io) => {
 
     const mappedClients = io.sockets.adapter.rooms.get(rid);
 
-    if (mappedClients && mappedClients.size >= process.env.maxMembersPerRoom) {
+    if (mappedClients && mappedClients.size >= CONFIG().maxMembersPerRoom) {
       warning({ module: moduleName, label: `can't join - already ${mappedClients.size} persons in room ${rid}` });
       reject({
         errorCode: JSONGLE_ERROR_CODE.FORBIDDEN_FULL,
@@ -39,7 +40,7 @@ const registerUserToRoom = async (message, socket, io) => {
     if (mappedClients) {
       mappedClients.forEach((id) => {
         const client = io.of('/').sockets.get(id);
-        const messageEventJoined = buildEvent(process.env.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.JOINED, { member: socket.data, rid });
+        const messageEventJoined = buildEvent(CONFIG().id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.JOINED, { member: socket.data, rid });
         emitMessage(messageEventJoined, client, io);
         members.push(client.data);
       });
@@ -92,7 +93,7 @@ const unregisterUserFromRoom = async (message, socket, io) => {
     if (mappedClients) {
       mappedClients.forEach((id) => {
         const client = io.of('/').sockets.get(id);
-        const messageLeftEvent = buildEvent(process.env.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid });
+        const messageLeftEvent = buildEvent(CONFIG().id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid });
         emitMessage(messageLeftEvent, client, io);
       });
     }
@@ -144,9 +145,9 @@ exports.handleIQResult = async (message, socket, io) => {
     case JSONGLE_IQ_QUERY.HELLO:
       if (!isHelloValid(jsongle.description)) {
         error({ module: moduleName, label: `no 'uid' parameter set` });
-        const messageAckFailed = buildAck(process.env.id, message.from, JSONGLE_ACK_VALUE.FAILED, jsongle.transaction);
+        const messageAckFailed = buildAck(CONFIG().id, message.from, JSONGLE_ACK_VALUE.FAILED, jsongle.transaction);
         emitMessage(messageAckFailed, socket, io);
-        const messageErrorMissingParameter = buildError(process.env.id, message.from, describeErrorHello("Missing 'uid' parameter"));
+        const messageErrorMissingParameter = buildError(CONFIG().id, message.from, describeErrorHello("Missing 'uid' parameter"));
         emitMessage(messageErrorMissingParameter, socket, io);
         return;
       }
@@ -154,7 +155,7 @@ exports.handleIQResult = async (message, socket, io) => {
       // Store user identification information
       socket.data = jsongle.description;
       info({ module: moduleName, label: `new user ${jsongle.description.uid} associated to socket ${socket.id}` });
-      const messageAckSuccess = buildAck(process.env.id, message.from, JSONGLE_ACK_VALUE.SUCCESS, jsongle.transaction);
+      const messageAckSuccess = buildAck(CONFIG().id, message.from, JSONGLE_ACK_VALUE.SUCCESS, jsongle.transaction);
       emitMessage(messageAckSuccess, socket, io);
       break;
     default:
@@ -163,6 +164,6 @@ exports.handleIQResult = async (message, socket, io) => {
 
 exports.sendIQGetHello = (socket, io) => {
   // Emit hello to newcomer
-  const messageHello = buildIQ(process.env.id, generateNewId(), JSONGLE_MESSAGE_TYPE.IQ_GET, generateNewId(), JSONGLE_IQ_QUERY.HELLO, describeHello(process.env.id, package.version, package.description));
+  const messageHello = buildIQ(CONFIG().id, generateNewId(), JSONGLE_MESSAGE_TYPE.IQ_GET, generateNewId(), JSONGLE_IQ_QUERY.HELLO, describeHello(CONFIG().id, package.version, package.description));
   emitMessage(messageHello, socket, io);
 }

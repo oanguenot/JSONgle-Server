@@ -11,23 +11,23 @@ const moduleName = 'socket';
 
 const DEFAULT_MAX_CONCURRENT_USERS = 50;
 
-exports.listen = (io) => {
+exports.listen = (io, CFG) => {
   // Middleware for limiting users
   io.use((socket, next) => {
-    if (io.engine.clientsCount >= (process.env.maxConcurrentUsers || DEFAULT_MAX_CONCURRENT_USERS)) {
-      error({ module: moduleName, label: `${socket.id} disconnected -  max number of client exceeded` });
+    if (io.engine.clientsCount >= (CFG.maxConcurrentUsers)) {
+      error({ module: moduleName, label: `${socket.id} disconnected -  max number of client exceeded (${CFG.maxConcurrentUsers})` });
       socket.disconnect(true);
     }
     next();
   });
 
-  //Middleware for checking the secret token
+  //Middleware for checking the app token
   io.use((socket, next) => {
     const { handshake } = socket;
     const { auth } = handshake;
 
-    if (!auth || !auth.secretToken || auth.secretToken !== process.env.secretToken) {
-      error({ module: moduleName, label: `${socket.id} disconnected - bad token provided` });
+    if (!auth || !auth.appToken || auth.appToken !== CFG.appToken) {
+      error({ module: moduleName, label: `${socket.id} disconnected - bad application token provided` });
       socket.disconnect(true);
     }
     next();
@@ -50,14 +50,14 @@ exports.listen = (io) => {
 
       if (!message || !message.jsongle) {
         error({ module: moduleName, label: "Can't deal with message received, missing 'jsongle' property in message" });
-        const messageNotHandled = buildError(process.env.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.NO_JSONGLE_DATA, "Missing property 'jsongle' in message"));
+        const messageNotHandled = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.NO_JSONGLE_DATA, "Missing property 'jsongle' in message"));
         emitMessage(messageNotHandled, socket, io);
         return;
       }
 
       if (!socket.data) {
         error({ module: moduleName, label: `Can't deal with message received, user ${socket.id} is not yet registered` });
-        const messageUserNotRegistered = buildError(process.env.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.FORBIDDEN_NOT_REGISTERED, "session-hello message was not received or was not complete"));
+        const messageUserNotRegistered = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.FORBIDDEN_NOT_REGISTERED, "session-hello message was not received or was not complete"));
         emitMessage(messageUserNotRegistered, socket, io);
         return;
       }
@@ -80,7 +80,7 @@ exports.listen = (io) => {
         actions[message.jsongle.action](message, socket, io);
       } else {
         error({ module: moduleName, label: `Can't deal with message received, action ${message.jsongle.action} is not handled` });
-        const messageNotHandled = buildError(process.env.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.ACTION_NOT_ALLOWED, "Message sent was not handled"));
+        const messageNotHandled = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.ACTION_NOT_ALLOWED, "Message sent was not handled"));
         emitMessage(messageNotHandled, socket, io);
       }
     });
@@ -98,7 +98,7 @@ exports.listen = (io) => {
               if (id !== socket.id) {
                 // inform members that a user left the room
                 const client = io.of('/').sockets.get(id);
-                const messageLeftRoom = buildEvent(process.env.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid });
+                const messageLeftRoom = buildEvent(CFG.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid });
                 emitMessage(messageLeftRoom, client, io);
               }
             });
