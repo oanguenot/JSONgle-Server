@@ -30,36 +30,27 @@ $ npm install
 
 ## Configuration
 
-**JSONgle-Server** reads its configuration from an **.env** file. Here is an example of configuration.
+**JSONgle-Server** reads its configuration from an **.env** file or directly from any environments variables set. See file **.env.defaults** for the default values used.
 
-```bash
-wsPort=8080
-restPort=8081
-corsPolicyOrigin=https://localhost:3000
-maxConcurrentUsers=10
-id=barracuda
-logDefaultLevel=debug
-logPath=/tmp/jsongle-server.log
-logFilesNumber=3
-logFilePeriod=1d
-key=./certificates/server.key
-cert=./certificates/server.crt
-appToken="d4fr34....b7b8733b384"
-```
 
-The **.env** file contains the following settings
+The following variables can be set
 
 | Settings | Description |
 |:---------|:------------|
-| **wsPort** | WebSocket Server Port<br>Default is `8080` |
-| **restPort** | HTTP REST API Server Port <br>Default is `8081` |
-| **corsPolicyOrigin** | Restricted CORS policy access.<br>Default is `''` |
-| **maxConcurrentUsers** | Max number of connection to the WebSocket server<br>Default is `50` |
-| **id** | Server identifier<br> Default is `jsongle-server` |
-| **logDefaultLevel** | Level of logs<br>Default is `warn`.  |
-| **logPath** | Path to file for storing logs. No logs stored by default. Level is always equals to `debug` |
-| **logFilesNumber** | Number of old log files kept. Default is `3` |
-| **logFilePeriod** | Period of logging before changing to a new file. Default is `1d` |
+| **wsPort** | WebSocket Server Port used.<br>Default value is `8080` |
+| **restPort** | HTTP REST API Server Port used.<br>Default value is `8081` |
+| **corsPolicyOrigin** | Restricted CORS policy access.<br>Default value is `''` |
+| **maxConcurrentUsers** | Max number of simultaneous connections to the WebSocket server.<br>Default value is `10` |
+| **id** | Server identifier.<br>Default value is `jsongle-server` |
+| **logDefaultLevel** | Level of logs.<br>Default value is `warn`.  |
+| **logPath** | Path to file for storing logs.<br>Default value is `/tmp/jsongle-server.log`.<br>Level is always equals to `debug` when logging to the file. |
+| **logFilesNumber** | Number of old log files kept.<br>Default value is `3` |
+| **logFilePeriod** | Period of logging before changing to a new file.<br>Default value is `1d` (1 day) |
+| **key** | Path to the certificate KEY file used.<br>Default value is `./key.pem` |
+| **cert** | Path to the certificate CERT file used.<br>Default value is `./cert.pem` |
+| **appToken** | Application token used.<br>Default value is `''` |
+
+Note: **appToken** value is sent by the client and verified by **JSONgle-Server** when initiating the connection.
 
 ## Start JSONgle-Server
 
