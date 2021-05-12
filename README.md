@@ -68,7 +68,7 @@ The server will be automatically restarted thanks to **nodemon**.
 
 ## Main principles
 
-The **JSONgle-Server** has two 'end-points':
+**JSONgle-Server** has two 'end-points':
 
 - A REST API used to monitor the server
 
@@ -94,6 +94,25 @@ For exchanging the signaling part, client should be connected to the WebSocket a
 
 Here are the messages handled by the server in some specific situations.
 
+
+### Websocket connection
+
+**JSONgle-Server** uses [Socket.IO](https://socket.io/) for handling the connection coming from the client.
+
+To be accepted, connections should contain an `appToken` that is checked by **JSONgle-Server**.
+
+```js
+//Somewhere in your client application
+import {io} from "socket.io-client";
+
+socketIO = io(<URL_TO_JSONGLE_SERVER>, {
+  ... // other parameters
+  auth: {
+    appToken: "d371db...733b384"    //Your token
+  }
+});
+```
+
 ### session-hello message
 
 When a connection is set to the WebSocket server, **JSONgle-Server** sends back to the client the following query
@@ -101,7 +120,7 @@ When a connection is set to the WebSocket server, **JSONgle-Server** sends back 
 ```js
 {
   "id": "...",
-  "from": "barracuda", 
+  "from": "jsongle-server", 
   "to": "8e784de9-ba76-4b0f-bedf-e21cac593f75",  // Server side identity that should be used for any message coming from that client
   "jsongle": {
     "action": "iq-get",
@@ -109,7 +128,7 @@ When a connection is set to the WebSocket server, **JSONgle-Server** sends back 
     "transaction": "8c4feab5-71a0-41c6-8bcd-e21cac593f75"
     "description": {
       "version": "1.1.4",
-      "sn": "barracuda",
+      "sn": "jsongle-server",
       "info": "Easy signaling using JSONgle-Server",
     },
   },
@@ -122,7 +141,7 @@ The client should answer by the following message
 {
   "id": "...",
   "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
-  "to": "barracuda",
+  "to": "jsongle-server",
   "jsongle": {
     "action": "iq-result",
     "query": "session-hello",
@@ -147,13 +166,12 @@ To join a room for having a call or an instant messaging conversation, the clien
 {
   "id": "9b2feab5-71a0-41c6-8bcd-de67b819fdca",
   "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
-  "to": "barracuda",  // generated id (client is anonymous at that time)
+  "to": "jsongle-server",  // generated id (client is anonymous at that time)
   "jsongle": {
     "action": "iq-set",
     "query": "join",
     "description": {
       "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777", // arbitrary room name known by clients who want to have a call or conversation
-      "dn": "Jon Doe",
     },
   },
 }
@@ -163,77 +181,35 @@ The server answers by an `iq_result` or an `iq_error` depending on the result of
 
 The `iq_result` contains the list of users already in the room.
 
-All existing members of that room will receive a `session-event` message to inform them about the new member.
+All existing members of that room receive a `session-event` message to inform them about the new member.
 
+### Leaving a room
 
-## Specific messages
-
-### Unreachable recipient
-
-When the issuer sent the **session-propose** message, once received, the server could check if the recipient exists and is connected.
-
-If the recipient can't be reachable, a **session-info** message with `reason=unreachable` could be sent to the issuer to inform him that the call can't be proceeded and to change the call information to the `state=ended` with `reason=unreachable`.
-
-See paragraph **Messages exchanged** to have the description of the message to send.
+In the same manner, a user can leave a room by sending the following message
 
 ```js
-// Example using socket-io on server side
-socket.on("jsongle", (message) => {
-    // Check that the recipient exists and is connected
-    if (!(message.to in users)) {
-        const abortMsg = {
-            id: "<your_random_message_id>",
-            from: "server",
-            to: message.from,
-            jsongle: {
-                sid: message.jsongle.sid,
-                action: "session-info",
-                reason: "unreachable",
-                initiator: message.jsongle.initiator,
-                responder: message.jsongle.responder,
-                description: {
-                    ended: new Date().toJSON(),
-                },
-            },
-        };
-
-        // Send a try to issuer
-        socket.emit("jsongle", abortMsg);
-        return;
-    }
-});
+{
+  "id": "9b2feab5-71a0-41c6-8bcd-de67b819fdca",
+  "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
+  "to": "jsongle-server",  // generated id (client is anonymous at that time)
+  "jsongle": {
+    "action": "iq-set",
+    "query": "leave",
+    "description": {
+      "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777", // arbitrary room name known by clients who want to have a call or conversation
+    },
+  },
+}
 ```
 
-### Trying
+An `iq_result` or an `iq_error` message is sent depending on the result.
 
-When the issuer sent the **session-propose** message and once the server has found the recipient, the server could send a **session-info** message with `reason=trying` to the issuer to inform him that the call is routing to the recipient.
+All remaining members of that room receive a `session-event` message to inform them of the leaving of a member.
 
-See paragraph **Messages exchanged** to have the description of the message to send.
+### Handling signalization
 
-```js
-// Example using socket-io on server side
-socket.on("jsongle", (message) => {
-    // Check the recipient and the message
-    if (message.to in users && message.jsongle.action === "session-propose") {
-        const abortMsg = {
-            id: "<your_random_message_id>",
-            from: "server",
-            to: message.from,
-            jsongle: {
-                sid: message.jsongle.sid,
-                action: "session-info",
-                reason: "trying",
-                initiator: message.jsongle.initiator,
-                responder: message.jsongle.responder,
-                description: {
-                    tried: new Date().toJSON(),
-                },
-            },
-        };
+Any messages sent to the room is then dispatched to all members (except the emitter) on behalf of the room. 
 
-        // Send a try to issuer
-        socket.emit("jsongle", abortMsg);
-        return;
-    }
-});
-```
+At this time of writing, for having video calls, rooms should be limited to 2 users. 
+
+
