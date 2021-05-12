@@ -6,10 +6,9 @@ const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_ERROR_CODE, JSONGLE_EVENTS_NAMESPA
 const { emitMessage } = require("../sig/emitter");
 const { handleIQ, handleIQResult, sendIQGetHello: sendIQGetHello } = require("../sig/iq");
 const { handleMessageToRelayInRoom, handlePropose } = require("../sig/call");
+const { isMessageQualified, isUserIdentified, isRoomMessageSentByAUserInRoom, isOtherMemberInRoom, isActionSupported } = require("../sig/middleware");
 
 const moduleName = 'socket';
-
-const DEFAULT_MAX_CONCURRENT_USERS = 50;
 
 exports.listen = (io, CFG) => {
   // Middleware for limiting users
@@ -48,17 +47,23 @@ exports.listen = (io, CFG) => {
     socket.on(COMMON.JSONGLE, (message) => {
       debug({ module: moduleName, method: "RECV", message });
 
-      if (!message || !message.jsongle) {
-        error({ module: moduleName, label: "Can't deal with message received, missing 'jsongle' property in message" });
-        const messageNotHandled = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.NO_JSONGLE_DATA, "Missing property 'jsongle' in message"));
-        emitMessage(messageNotHandled, socket, io);
+      if (!isMessageQualified(message, socket, io)) {
         return;
       }
 
-      if (!socket.data) {
-        error({ module: moduleName, label: `Can't deal with message received, user ${socket.id} is not yet registered` });
-        const messageUserNotRegistered = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.FORBIDDEN_NOT_REGISTERED, "session-hello message was not received or was not complete"));
-        emitMessage(messageUserNotRegistered, socket, io);
+      if (!isUserIdentified(message, socket, io)) {
+        return;
+      }
+
+      if (!isRoomMessageSentByAUserInRoom(message, socket, io)) {
+        return;
+      }
+
+      if (!isOtherMemberInRoom(message, socket, io)) {
+        return;
+      }
+
+      if (!isActionSupported(message, socket, io)) {
         return;
       }
 
@@ -78,13 +83,7 @@ exports.listen = (io, CFG) => {
         [JSONGLE_MESSAGE_TYPE.CUSTOM]: handleMessageToRelayInRoom,
       };
 
-      if (message.jsongle.action in actions) {
-        actions[message.jsongle.action](message, socket, io);
-      } else {
-        error({ module: moduleName, label: `Can't deal with message received, action ${message.jsongle.action} is not handled` });
-        const messageNotHandled = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.ACTION_NOT_ALLOWED, `Message of type ${message.jsongle.action} is not supported`));
-        emitMessage(messageNotHandled, socket, io);
-      }
+      actions[message.jsongle.action](message, socket, io);
     });
 
     // Handle clients disconnecting

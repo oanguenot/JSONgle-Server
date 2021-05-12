@@ -78,7 +78,7 @@ const unregisterUserFromRoom = async (message, socket, io) => {
     if (!mappedClients || !mappedClients.has(socket.id)) {
       warning({ module: moduleName, label: `can't leave - user ${socket.id} not in room ${rid}` });
       reject({
-        errorCode: JSONGLE_ERROR_CODE.MEMBER_NOT_FOUND,
+        errorCode: JSONGLE_ERROR_CODE.NOT_A_MEMBER,
         errorDetails: `Not member of room ${rid}`
       })
       return;

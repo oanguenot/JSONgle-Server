@@ -12,9 +12,6 @@ function messageSerializer(req) {
 }
 
 exports.createLogger = () => {
-
-    console.log(">>>", CONFIG())
-
     log = bunyan.createLogger({
         name: "jsongle-server",
         serializers: {
@@ -34,7 +31,8 @@ exports.createLogger = () => {
                 path: CONFIG().logPath || '/tmp/jsongle-server.log',
                 period: CONFIG().logFilePeriod || '1d',   // daily rotation
                 count: CONFIG().logFilesNumber || 3,       // keep 3 back copies
-            }]
+            }
+        ]
     });
 }
 

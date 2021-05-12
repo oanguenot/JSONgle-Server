@@ -14,7 +14,6 @@ const moduleName = "server";
 const initialize = () => {
 
     configure();
-    console.log(">>>", CONFIG())
     createLogger();
     setLevelTo(CONFIG().logDefaultLevel);
     debug({ module: moduleName, label: `Log level set to ${getLogLevel()}` });
