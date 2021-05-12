@@ -1,13 +1,13 @@
 # JSONgle-Server
 
-**JSONgle-Server** is a WebRTC signaling server allowing users to have a WebRTC call. The signaling protocol used is based on [JSONgle](https://github.com/oanguenot/JSONgle) which use JSON to describe the message exchanged.
+**JSONgle-Server** is a WebRTC signaling server allowing users to have WebRTC calls. The signaling protocol used is based on [JSONgle](https://github.com/oanguenot/JSONgle) which uses JSON to describe the messages exchanged.
 
 **JSONgle-Server** allows to
 - Connect clients to a dedicated room
-- Send room 'joined' and 'left' events
+- Handle room 'joined' and 'left' events
 - Handle WebRTC signaling protocol between members of a room
 - Handle custom JSON messages between members of a room
-- Handle chat messages between members of a room (planned)
+- Handle chat messages between members of a room
 - Handle audio & video conference (planned)
 
 ## Install

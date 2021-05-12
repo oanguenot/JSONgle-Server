@@ -74,13 +74,15 @@ exports.listen = (io, CFG) => {
         [JSONGLE_MESSAGE_TYPE.RETRACT]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.ACCEPT]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.TERMINATE]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.TEXT]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.CUSTOM]: handleMessageToRelayInRoom,
       };
 
       if (message.jsongle.action in actions) {
         actions[message.jsongle.action](message, socket, io);
       } else {
         error({ module: moduleName, label: `Can't deal with message received, action ${message.jsongle.action} is not handled` });
-        const messageNotHandled = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.ACTION_NOT_ALLOWED, "Message sent was not handled"));
+        const messageNotHandled = buildError(CFG.id, message.from, describeGenericError(JSONGLE_ERROR_CODE.ACTION_NOT_ALLOWED, `Message of type ${message.jsongle.action} is not supported`));
         emitMessage(messageNotHandled, socket, io);
       }
     });
