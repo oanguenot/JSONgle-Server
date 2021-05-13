@@ -5,7 +5,7 @@ const DEFAULT_CONFIG = {
   restPort: 8081,
   corsPolicyOrigin: "https://localhost:3000",
   maxConcurrentUsers: 10,
-  id: "barracuda",
+  id: "jsongle-server",
   logDefaultLevel: "debug",
   logPath: "/tmp/jsongle-server.log",
   logFilesNumber: 3,
