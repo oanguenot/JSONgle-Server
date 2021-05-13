@@ -1,7 +1,7 @@
 const { debug } = require("../services/logger");
 const { COMMON } = require("../helpers/helper");
 
-const moduleName = "emitter";
+const moduleName = "sig:emit";
 
 exports.emitMessage = (message, socket, io, toAll = false) => {
   if (toAll) {

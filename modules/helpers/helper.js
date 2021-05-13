@@ -65,7 +65,8 @@ exports.JSONGLE_SESSION_INFO_REASON = {
 }
 
 exports.JSONGLE_EVENTS_NAMESPACE = {
-  ROOM: 'room'
+  ROOM: 'room',
+  MESSAGE: 'message'
 }
 
 exports.JSONGLE_IQ_QUERY = {
@@ -94,4 +95,8 @@ exports.JSONGLE_ACK_VALUE = {
 exports.JSONGLE_ROOM_EVENTS = {
   JOINED: 'joined',
   LEFT: 'left'
+}
+
+exports.JSONGLE_IM_EVENTS = {
+  ACK: 'ack'
 }

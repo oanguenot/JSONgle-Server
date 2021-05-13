@@ -1,10 +1,10 @@
 const { debug } = require("../services/logger");
 const { emitMessage } = require('./emitter');
-const { JSONGLE_SESSION_INFO_REASON, JSONGLE_ERROR_CODE } = require("../helpers/helper");
-const { buildError, buildSessionInfo, describeGenericError } = require("../helpers/jsongle");
+const { JSONGLE_SESSION_INFO_REASON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_IM_EVENTS } = require("../helpers/helper");
+const { buildSessionInfo, buildEvent } = require("../helpers/jsongle");
 const { CONFIG } = require('../services/config');
 
-const moduleName = "sig:call";
+const moduleName = "sig:msg";
 
 const relayMessageToRoom = async (message, socket, io, callback) => {
   debug({ module: moduleName, label: `forward ${message.jsongle.action} to members of room ${message.to}` });
@@ -24,4 +24,11 @@ exports.handlePropose = async (message, socket, io) => {
 
 exports.handleMessageToRelayInRoom = async (message, socket, io) => {
   relayMessageToRoom(message, socket, io);
+}
+
+exports.handleMessageWithAckToRelayInRoom = async (message, socket, io) => {
+  relayMessageToRoom(message, socket, io, () => {
+    const ackEvent = buildEvent(CONFIG().id, message.from, JSONGLE_EVENTS_NAMESPACE.MESSAGE, JSONGLE_IM_EVENTS.ACK, { 'received': new Date().toJSON() });
+    emitMessage(ackEvent, socket, io);
+  });
 }

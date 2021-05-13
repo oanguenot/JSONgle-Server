@@ -1,11 +1,11 @@
 const { info, error, debug } = require("./logger");
 const { addUsersCounter, minusUsersCounter } = require("./prom");
-const { buildError, buildEvent, describeGenericError } = require("../helpers/jsongle");
-const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_ERROR_CODE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
+const { buildEvent } = require("../helpers/jsongle");
+const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 
 const { emitMessage } = require("../sig/emitter");
 const { handleIQ, handleIQResult, sendIQGetHello: sendIQGetHello } = require("../sig/iq");
-const { handleMessageToRelayInRoom, handlePropose } = require("../sig/call");
+const { handleMessageToRelayInRoom, handlePropose, handleMessageWithAckToRelayInRoom } = require("../sig/message");
 const { isMessageQualified, isUserIdentified, isRoomMessageSentByAUserInRoom, isOtherMemberInRoom, isActionSupported } = require("../sig/middleware");
 
 const moduleName = 'socket';
@@ -79,8 +79,8 @@ exports.listen = (io, CFG) => {
         [JSONGLE_MESSAGE_TYPE.RETRACT]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.ACCEPT]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.TERMINATE]: handleMessageToRelayInRoom,
-        [JSONGLE_MESSAGE_TYPE.TEXT]: handleMessageToRelayInRoom,
-        [JSONGLE_MESSAGE_TYPE.CUSTOM]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.TEXT]: handleMessageWithAckToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.CUSTOM]: handleMessageWithAckToRelayInRoom,
       };
 
       actions[message.jsongle.action](message, socket, io);
