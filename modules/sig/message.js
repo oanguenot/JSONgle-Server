@@ -1,6 +1,6 @@
 const { debug } = require("../services/logger");
 const { emitMessage } = require('./emitter');
-const { JSONGLE_SESSION_INFO_REASON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_IM_EVENTS } = require("../helpers/helper");
+const { JSONGLE_SESSION_INFO_REASON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_IM_EVENTS, JSONGLE_ACK_TYPE } = require("../helpers/helper");
 const { buildSessionInfo, buildEvent } = require("../helpers/jsongle");
 const { CONFIG } = require('../services/config');
 
@@ -28,7 +28,7 @@ exports.handleMessageToRelayInRoom = async (message, socket, io) => {
 
 exports.handleMessageWithAckToRelayInRoom = async (message, socket, io) => {
   relayMessageToRoom(message, socket, io, () => {
-    const ackEvent = buildEvent(CONFIG().id, message.from, JSONGLE_EVENTS_NAMESPACE.MESSAGE, JSONGLE_IM_EVENTS.ACK, { 'server-received': new Date().toJSON(), 'mid': message.id });
+    const ackEvent = buildEvent(CONFIG().id, message.from, JSONGLE_EVENTS_NAMESPACE.MESSAGE, JSONGLE_IM_EVENTS.ACK, { acknowledged: new Date().toJSON(), 'mid': message.id, type: JSONGLE_ACK_TYPE.SERVER_RECEIVED });
     emitMessage(ackEvent, socket, io);
   });
 }

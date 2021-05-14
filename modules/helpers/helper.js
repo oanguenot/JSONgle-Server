@@ -101,3 +101,7 @@ exports.JSONGLE_ROOM_EVENTS = {
 exports.JSONGLE_IM_EVENTS = {
   ACK: 'ack'
 }
+
+exports.JSONGLE_ACK_TYPE = {
+  SERVER_RECEIVED: 'server-received'
+}
