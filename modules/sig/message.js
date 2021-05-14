@@ -28,7 +28,7 @@ exports.handleMessageToRelayInRoom = async (message, socket, io) => {
 
 exports.handleMessageWithAckToRelayInRoom = async (message, socket, io) => {
   relayMessageToRoom(message, socket, io, () => {
-    const ackEvent = buildEvent(CONFIG().id, message.from, JSONGLE_EVENTS_NAMESPACE.MESSAGE, JSONGLE_IM_EVENTS.ACK, { 'server-received': new Date().toJSON() });
+    const ackEvent = buildEvent(CONFIG().id, message.from, JSONGLE_EVENTS_NAMESPACE.MESSAGE, JSONGLE_IM_EVENTS.ACK, { 'server-received': new Date().toJSON(), 'mid': message.id });
     emitMessage(ackEvent, socket, io);
   });
 }
