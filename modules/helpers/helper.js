@@ -54,6 +54,7 @@ exports.isMessageTypeSupported = (type) => {
     this.JSONGLE_MESSAGE_TYPE.RETRACT,
     this.JSONGLE_MESSAGE_TYPE.ACCEPT,
     this.JSONGLE_MESSAGE_TYPE.TERMINATE,
+    this.JSONGLE_MESSAGE_TYPE.EVENT,
   ];
 
   return messageType.includes(type);

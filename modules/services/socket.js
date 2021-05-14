@@ -81,6 +81,7 @@ exports.listen = (io, CFG) => {
         [JSONGLE_MESSAGE_TYPE.TERMINATE]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.TEXT]: handleMessageWithAckToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.CUSTOM]: handleMessageWithAckToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.EVENT]: handleMessageToRelayInRoom,
       };
 
       actions[message.jsongle.action](message, socket, io);
