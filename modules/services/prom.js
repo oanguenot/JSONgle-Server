@@ -4,34 +4,41 @@ const ResponseTime = require('response-time');
 let registry = null;
 
 var metricsGetsCounter = new client.Counter({
-  name: 'jsongleserver_total_metrics_requests',
+  name: 'jsonglesig_metrics_requests_total',
   help: 'number of GET /metrics requests',
 });
 
 var numOfRequests = numOfRequests = new client.Counter({
-  name: 'jsongleserver_num_requests',
+  name: 'jsonglesig_all_requests_total',
   help: 'Number of requests made',
   labelNames: ['method']
 });
 
 var pathsTaken = new client.Counter({
-  name: 'jsongleserver_paths_requests',
+  name: 'jsonglesig_all_paths_requests',
   help: 'Paths taken in the app',
   labelNames: ['path']
 });
 
 var responses = new client.Summary({
-  name: 'jsongleserver_response_time_ms',
+  name: 'jsonglesig_response_time_ms',
   help: 'Response time in millis',
   labelNames: ['method', 'path', 'status']
 });
 
 var users = new client.Gauge({
-  name: 'jsongleserver_connected_users',
+  name: 'jsonglesig_users_count',
   help: 'Number of simultaneous users',
   labelNames: ['users']
 });
 users.set(0);
+
+var rooms = new client.Gauge({
+  name: 'jsonglesig_rooms_count',
+  help: 'Number of existing rooms',
+  labelNames: ['rooms']
+});
+rooms.set(0);
 
 exports.collect = () => {
   const collectDefaultMetrics = client.collectDefaultMetrics;
@@ -66,6 +73,13 @@ exports.responseCounters = ResponseTime((req, res, time) => {
   }
 });
 
+// Reset all specific counters
+exports.resetAllCustomMetrics = () => {
+  this.resetRoomsCounter();
+  this.resetUsersCounter();
+}
+
+// Users counters
 exports.resetUsersCounter = () => {
   users.set(0);
 }
@@ -77,3 +91,17 @@ exports.addUsersCounter = () => {
 exports.minusUsersCounter = () => {
   users.dec(1);
 }
+
+// Rooms counters
+exports.resetRoomsCounter = () => {
+  rooms.set(0);
+}
+
+exports.addRoomsCounter = () => {
+  rooms.inc(1);
+}
+
+exports.minusRoomsCounter = () => {
+  rooms.dec(1);
+}
+

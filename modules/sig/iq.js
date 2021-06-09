@@ -5,6 +5,7 @@ const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, bu
 const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_QUERY, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 const { emitMessage } = require('./emitter');
 const { CONFIG } = require('../services/config');
+const { addRoomsCounter } = require("../services/prom");
 
 const moduleName = "sig:iq";
 
@@ -44,6 +45,8 @@ const registerUserToRoom = async (message, socket, io) => {
         emitMessage(messageEventJoined, client, io);
         members.push(client.data);
       });
+    } else {
+      addRoomsCounter();
     }
 
     info({ module: moduleName, label: `${socket.id} joined room ${rid}` });

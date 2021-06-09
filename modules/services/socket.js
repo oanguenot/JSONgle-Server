@@ -1,5 +1,5 @@
 const { info, error, debug } = require("./logger");
-const { addUsersCounter, minusUsersCounter } = require("./prom");
+const { addUsersCounter, minusUsersCounter, minusRoomsCounter } = require("./prom");
 const { buildEvent } = require("../helpers/jsongle");
 const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 
@@ -104,6 +104,8 @@ exports.listen = (io, CFG) => {
                 emitMessage(messageLeftRoom, client, io);
               }
             });
+          } else {
+            minusRoomsCounter();
           }
         }
       });
