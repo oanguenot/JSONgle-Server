@@ -12,7 +12,10 @@ const DEFAULT_CONFIG = {
   logFilePeriod: "1d",
   key: "key.pem",
   cert: "cert.pem",
-  appToken: ""
+  appToken: "",
+  multiRoomPrefix: "#muc#",
+  maxMembersPerMultiRoom: 10,
+  maxMultiRoomPerUser: 10,
 };
 
 let _CONFIG = null;

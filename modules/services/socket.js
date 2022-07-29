@@ -1,11 +1,11 @@
 const { info, error, debug } = require("./logger");
-const { addUsersCounter, minusUsersCounter, minusRoomsCounter } = require("./prom");
+const { addUsersCounter, minusUsersCounter, minusRoomsCounter, minusMucCounter, addUsersTotalCounter} = require("./prom");
 const { buildEvent } = require("../helpers/jsongle");
 const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 
 const { emitMessage } = require("../sig/emitter");
-const { handleIQ, handleIQResult, sendIQGetHello: sendIQGetHello } = require("../sig/iq");
-const { handleMessageToRelayInRoom, handlePropose, handleMessageWithAckToRelayInRoom } = require("../sig/message");
+const { handleIQ, handleIQResult, sendIQGetHello: sendIQGetHello} = require("../sig/iq");
+const { handleMessageToRelayInRoom, handlePropose, handleMessageWithAckToRelayInRoom, handleAccept, handleMetrics } = require("../sig/message");
 const { isMessageQualified, isUserIdentified, isRoomMessageSentByAUserInRoom, isOtherMemberInRoom, isActionSupported } = require("../sig/middleware");
 
 const moduleName = 'socket';
@@ -37,6 +37,7 @@ exports.listen = (io, CFG) => {
     info({ module: moduleName, label: `new user connected ${socket.id}` });
 
     addUsersCounter();
+    addUsersTotalCounter();
 
     const totalUsers = io.engine.clientsCount;
     debug({ module: moduleName, label: `currently ${totalUsers} user(s) connected` });
@@ -59,8 +60,12 @@ exports.listen = (io, CFG) => {
         return;
       }
 
-      if (!isOtherMemberInRoom(message, socket, io)) {
-        return;
+      const namespace = message.jsongle.namespace;
+      // Only applicable for room (not for muc)
+      if (namespace !== JSONGLE_EVENTS_NAMESPACE.MUC) {
+        if (!isOtherMemberInRoom(message, socket, io)) {
+          return;
+        }
       }
 
       if (!isActionSupported(message, socket, io)) {
@@ -77,11 +82,12 @@ exports.listen = (io, CFG) => {
         [JSONGLE_MESSAGE_TYPE.TRANSPORT]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.DECLINE]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.RETRACT]: handleMessageToRelayInRoom,
-        [JSONGLE_MESSAGE_TYPE.ACCEPT]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.ACCEPT]: handleAccept,
         [JSONGLE_MESSAGE_TYPE.TERMINATE]: handleMessageToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.TEXT]: handleMessageWithAckToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.CUSTOM]: handleMessageWithAckToRelayInRoom,
         [JSONGLE_MESSAGE_TYPE.EVENT]: handleMessageToRelayInRoom,
+        [JSONGLE_MESSAGE_TYPE.METRICS]: handleMetrics,
       };
 
       actions[message.jsongle.action](message, socket, io);
@@ -95,17 +101,22 @@ exports.listen = (io, CFG) => {
       rooms.forEach(rid => {
         if (rid !== socket.id) {
           const mappedClients = io.sockets.adapter.rooms.get(rid);
+          const connectToAMultiRoom = rid.startsWith(CFG.multiRoomPrefix);
           if (mappedClients) {
             mappedClients.forEach((id) => {
               if (id !== socket.id) {
                 // inform members that a user left the room
                 const client = io.of('/').sockets.get(id);
-                const messageLeftRoom = buildEvent(CFG.id, client.id, JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid });
+                const messageLeftRoom = buildEvent(CFG.id, client.id, connectToAMultiRoom ? JSONGLE_EVENTS_NAMESPACE.MUC : JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid });
                 emitMessage(messageLeftRoom, client, io);
+              } else if (id === socket.id && mappedClients.size === 1) {
+                if(connectToAMultiRoom) {
+                  minusMucCounter();
+                } else {
+                  minusRoomsCounter();
+                }
               }
             });
-          } else {
-            minusRoomsCounter();
           }
         }
       });

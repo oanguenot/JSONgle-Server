@@ -2,7 +2,7 @@ const morgan = require("morgan");
 const fs = require('fs');
 const express = require("express");
 
-const cors = require('cors')
+const cors = require('cors');
 
 const { CONFIG, configure } = require("./modules/services/config");
 const { info, debug, setLevelTo, getLogLevel, createLogger, error } = require("./modules/services/logger");
@@ -12,14 +12,13 @@ const { collect, requestCounters, responseCounters } = require("./modules/servic
 const moduleName = "server";
 
 const initialize = () => {
-
     configure();
     createLogger();
     setLevelTo(CONFIG().logDefaultLevel);
     debug({ module: moduleName, label: `Log level set to ${getLogLevel()}` });
 
     debug({ module: moduleName, label: "---------------------------------------------------------------------" });
-    info({ module: moduleName, label: "welcome to JSONgle-Server!" });
+    info({ module: moduleName, label: "welcome to JSONgle Signaling Server!" });
 
     info({ module: moduleName, label: `initialize instance ${CONFIG().id}...` });
 
@@ -73,10 +72,10 @@ const initialize = () => {
     }
 
     info({ module: moduleName, label: `initialization done!` });
-}
+};
 
 initialize();
 
 process.once("SIGHUP", function () {
     debug({ module: moduleName, label: "process restarted" });
-})
+});

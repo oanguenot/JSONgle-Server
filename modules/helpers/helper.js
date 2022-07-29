@@ -20,7 +20,8 @@ exports.JSONGLE_MESSAGE_TYPE = {
   ACCEPT: 'session-accept',
   TERMINATE: 'session-terminate',
   TEXT: 'session-text',
-  CUSTOM: 'session-custom'
+  CUSTOM: 'session-custom',
+  METRICS: 'session-metrics',
 };
 
 exports.isACallMessageType = (type) => {
@@ -55,6 +56,7 @@ exports.isMessageTypeSupported = (type) => {
     this.JSONGLE_MESSAGE_TYPE.ACCEPT,
     this.JSONGLE_MESSAGE_TYPE.TERMINATE,
     this.JSONGLE_MESSAGE_TYPE.EVENT,
+    this.JSONGLE_MESSAGE_TYPE.METRICS,
   ];
 
   return messageType.includes(type);
@@ -67,12 +69,14 @@ exports.JSONGLE_SESSION_INFO_REASON = {
 
 exports.JSONGLE_EVENTS_NAMESPACE = {
   ROOM: 'room',
+  MUC: 'muc',
   MESSAGE: 'message'
 }
 
 exports.JSONGLE_IQ_QUERY = {
   HELLO: 'session-hello',
   JOIN: 'session-join',
+  MUC: 'muc-join',
   LEAVE: 'session-leave',
 }
 
@@ -99,7 +103,8 @@ exports.JSONGLE_ROOM_EVENTS = {
 }
 
 exports.JSONGLE_IM_EVENTS = {
-  ACK: 'ack'
+  ACK: 'ack',
+  REACTION: 'reaction',
 }
 
 exports.JSONGLE_ACK_TYPE = {

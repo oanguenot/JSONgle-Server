@@ -1,5 +1,5 @@
 const { debug } = require("../services/logger");
-const { COMMON } = require("../helpers/helper");
+const { COMMON, JSONGLE_EVENTS_NAMESPACE } = require("../helpers/helper");
 
 const moduleName = "sig:emit";
 
@@ -11,11 +11,16 @@ exports.emitMessage = (message, socket, io, toAll = false) => {
     if (mappedClients) {
       mappedClients.forEach((id) => {
         if (id !== socket.id) {
+          const msg = { ...message };
           // emit message to members
-          message.from = message.to;
-          message.to = id;
+          if (message.jsongle.namespace === JSONGLE_EVENTS_NAMESPACE.MUC) {
+            msg.from = `${message.to}/${socket.data.uid}`;
+          } else {
+            msg.from = message.to;
+          }
+          msg.to = id;
           const client = io.of('/').sockets.get(id);
-          client.emit(COMMON.JSONGLE, message);
+          client.emit(COMMON.JSONGLE, msg);
         }
       });
     }

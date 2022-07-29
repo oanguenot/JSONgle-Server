@@ -1,5 +1,5 @@
 const { generateNewId } = require("./common");
-const { JSONGLE_ERROR_CODE, JSONGLE_MESSAGE_TYPE, JSONGLE_SESSION_INF0_REASON: JSONGLE_SESSION_INFO_REASON } = require('./helper');
+const { JSONGLE_ERROR_CODE, JSONGLE_MESSAGE_TYPE } = require('./helper');
 
 exports.describeHello = (serverId, serverVersion, serverDescription) => (
   {
@@ -12,7 +12,7 @@ exports.describeHello = (serverId, serverVersion, serverDescription) => (
 
 exports.describeJoined = (description) => (
   {
-      description,
+    description,
     joined: new Date().toJSON()
   }
 );

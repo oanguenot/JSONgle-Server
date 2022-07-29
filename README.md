@@ -35,20 +35,23 @@ $ npm install
 
 The following variables can be set
 
-| Settings               | Description                                                                                                                                  |
-|:-----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|
-| **wsPort**             | WebSocket Server Port used.<br>Default value is `8080`                                                                                       |
-| **restPort**           | HTTP REST API Server Port used.<br>Default value is `8081`                                                                                   |
-| **corsPolicyOrigin**   | Restricted CORS policy access.<br>Default value is `''`                                                                                      |
-| **maxConcurrentUsers** | Max number of simultaneous connections to the WebSocket server.<br>Default value is `10`                                                     |
-| **id**                 | Server identifier.<br>Default value is `jsongle-server`                                                                                      |
-| **logDefaultLevel**    | Level of logs.<br>Default value is `warn`.                                                                                                   |
-| **logPath**            | Path to file for storing logs.<br>Default value is `/tmp/jsongle-server.log`.<br>Level is always equals to `debug` when logging to the file. |
-| **logFilesNumber**     | Number of old log files kept.<br>Default value is `3`                                                                                        |
-| **logFilePeriod**      | Period of logging before changing to a new file.<br>Default value is `1d` (1 day)                                                            |
-| **key**                | Path to the certificate KEY file used.<br>Default value is `./key.pem`                                                                       |
-| **cert**               | Path to the certificate CERT file used.<br>Default value is `./cert.pem`                                                                     |
-| **appToken**           | Application token used.<br>Default value is `''`                                                                                             |
+| Settings                   | Description                                                                                                                                  |
+|:---------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|
+| **wsPort**                 | WebSocket Server Port used.<br>Default value is `8080`                                                                                       |
+| **restPort**               | HTTP REST API Server Port used.<br>Default value is `8081`                                                                                   |
+| **corsPolicyOrigin**       | Restricted CORS policy access.<br>Default value is `''`                                                                                      |
+| **maxConcurrentUsers**     | Max number of simultaneous connections to the WebSocket server.<br>Default value is `10`                                                     |
+| **id**                     | Server identifier.<br>Default value is `jsongle-server`                                                                                      |
+| **logDefaultLevel**        | Level of logs.<br>Default value is `warn`.                                                                                                   |
+| **logPath**                | Path to file for storing logs.<br>Default value is `/tmp/jsongle-server.log`.<br>Level is always equals to `debug` when logging to the file. |
+| **logFilesNumber**         | Number of old log files kept.<br>Default value is `3`                                                                                        |
+| **logFilePeriod**          | Period of logging before changing to a new file.<br>Default value is `1d` (1 day)                                                            |
+| **key**                    | Path to the certificate KEY file used.<br>Default value is `./key.pem`                                                                       |
+| **cert**                   | Path to the certificate CERT file used.<br>Default value is `./cert.pem`                                                                     |
+| **appToken**               | Application token used.<br>Default value is `''`                                                                                             |
+| **multiRoomPrefix**        | Prefix used to identify MUC room. Only used when disconnecting from the server (eg: "#muc#")                                                 |
+| **maxMembersPerMultiRoom** | Maximum number of users per MUC                                                                                                              |
+| **maxMultiRoomPerUser**    | Maximum number of MUC joined at the same time for a user                                                                                     |
 
 Note: **appToken** value is sent by the client and verified by **JSONgle-Server** when initiating the connection.
 
