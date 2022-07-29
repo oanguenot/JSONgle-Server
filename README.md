@@ -35,20 +35,20 @@ $ npm install
 
 The following variables can be set
 
-| Settings | Description |
-|:---------|:------------|
-| **wsPort** | WebSocket Server Port used.<br>Default value is `8080` |
-| **restPort** | HTTP REST API Server Port used.<br>Default value is `8081` |
-| **corsPolicyOrigin** | Restricted CORS policy access.<br>Default value is `''` |
-| **maxConcurrentUsers** | Max number of simultaneous connections to the WebSocket server.<br>Default value is `10` |
-| **id** | Server identifier.<br>Default value is `jsongle-server` |
-| **logDefaultLevel** | Level of logs.<br>Default value is `warn`.  |
-| **logPath** | Path to file for storing logs.<br>Default value is `/tmp/jsongle-server.log`.<br>Level is always equals to `debug` when logging to the file. |
-| **logFilesNumber** | Number of old log files kept.<br>Default value is `3` |
-| **logFilePeriod** | Period of logging before changing to a new file.<br>Default value is `1d` (1 day) |
-| **key** | Path to the certificate KEY file used.<br>Default value is `./key.pem` |
-| **cert** | Path to the certificate CERT file used.<br>Default value is `./cert.pem` |
-| **appToken** | Application token used.<br>Default value is `''` |
+| Settings               | Description                                                                                                                                  |
+|:-----------------------|:---------------------------------------------------------------------------------------------------------------------------------------------|
+| **wsPort**             | WebSocket Server Port used.<br>Default value is `8080`                                                                                       |
+| **restPort**           | HTTP REST API Server Port used.<br>Default value is `8081`                                                                                   |
+| **corsPolicyOrigin**   | Restricted CORS policy access.<br>Default value is `''`                                                                                      |
+| **maxConcurrentUsers** | Max number of simultaneous connections to the WebSocket server.<br>Default value is `10`                                                     |
+| **id**                 | Server identifier.<br>Default value is `jsongle-server`                                                                                      |
+| **logDefaultLevel**    | Level of logs.<br>Default value is `warn`.                                                                                                   |
+| **logPath**            | Path to file for storing logs.<br>Default value is `/tmp/jsongle-server.log`.<br>Level is always equals to `debug` when logging to the file. |
+| **logFilesNumber**     | Number of old log files kept.<br>Default value is `3`                                                                                        |
+| **logFilePeriod**      | Period of logging before changing to a new file.<br>Default value is `1d` (1 day)                                                            |
+| **key**                | Path to the certificate KEY file used.<br>Default value is `./key.pem`                                                                       |
+| **cert**               | Path to the certificate CERT file used.<br>Default value is `./cert.pem`                                                                     |
+| **appToken**           | Application token used.<br>Default value is `''`                                                                                             |
 
 Note: **appToken** value is sent by the client and verified by **JSONgle-Server** when initiating the connection.
 
@@ -102,13 +102,14 @@ Here are the messages handled by the server in some specific situations.
 To be accepted, connections should contain an `appToken` that is checked by **JSONgle-Server**.
 
 ```js
-//Somewhere in your client application
+// Somewhere in your client application
 import {io} from "socket.io-client";
 
-socketIO = io(<URL_TO_JSONGLE_SERVER>, {
-  ... // other parameters
+const SERVER_URL = "...";
+
+socketIO = io(SERVER_URL, {
   auth: {
-    appToken: "d371db...733b384"    //Your token
+    appToken: "d371db...733b384"
   }
 });
 ```
@@ -117,27 +118,29 @@ socketIO = io(<URL_TO_JSONGLE_SERVER>, {
 
 When a connection is set to the WebSocket server, **JSONgle-Server** sends back to the client the following query
 
-```js
+```json
 {
   "id": "...",
   "from": "jsongle-server", 
-  "to": "8e784de9-ba76-4b0f-bedf-e21cac593f75",  // Server side identity that should be used for any message coming from that client
+  "to": "8e784de9-ba76-4b0f-bedf-e21cac593f75",
   "jsongle": {
     "action": "iq-get",
     "query": "session-hello",
-    "transaction": "8c4feab5-71a0-41c6-8bcd-e21cac593f75"
+    "transaction": "8c4feab5-71a0-41c6-8bcd-e21cac593f75",
     "description": {
       "version": "1.1.4",
       "sn": "jsongle-server",
-      "info": "Easy signaling using JSONgle-Server",
-    },
-  },
+      "info": "Easy signaling using JSONgle-Server"
+    }
+  }
 }
 ```
 
+**to** is the user identity.
+
 The client should answer by the following message
 
-```js
+```json
 {
   "id": "...",
   "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
@@ -145,37 +148,42 @@ The client should answer by the following message
   "jsongle": {
     "action": "iq-result",
     "query": "session-hello",
-    "transaction": "8c4feab5-71a0-41c6-8bcd-e21cac593f75"
+    "transaction": "8c4feab5-71a0-41c6-8bcd-e21cac593f75",
     "description": {
-      "uid": "user_7000",     // Any unique identifier given by the client (Mandatory)
-      "dn": "Jon Doe"         // Any user distinguish name (Optional)
-    },
-  },
+      "uid": "user_7000",     
+      "dn": "Jon Doe"         
+    }
+  }
 }
 ```
+
+`uid` should be the unique identifier of the user. `dn` is optional.
 
 An `ack` message is then sent to the client to inform him that the answer has been received and handled. A status `success` or `failed` is contained in that message to have a result if needed. In case of error, an additional `session-error` message is sent too that describes the error.
 
 _Note_: Next client requests will be treated only if client has sent this `iq-result` response.
 
-### Join a room
+### Join a room for a P2P call or a P2P instant messaging conversation
 
 To join a room for having a call or an instant messaging conversation, the client should send the following message
 
-```js
+```json
 {
   "id": "9b2feab5-71a0-41c6-8bcd-de67b819fdca",
   "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
-  "to": "jsongle-server",  // generated id (client is anonymous at that time)
+  "to": "jsongle-server",  
   "jsongle": {
     "action": "iq-set",
-    "query": "join",
+    "query": "session-join",
+    "namespace": "room",
     "description": {
-      "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777", // arbitrary room name known by clients who want to have a call or conversation
-    },
-  },
+      "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777" 
+    }
+  }
 }
 ```
+
+Where `rid` is an arbitrary uniq room id known by clients who want to have a call or conversation.
 
 The server answers by an `iq_result` or an `iq_error` depending on the result of the operation.
 
@@ -187,20 +195,42 @@ All existing members of that room receive a `session-event` message to inform th
 
 In the same manner, a user can leave a room by sending the following message
 
-```js
+```json
 {
   "id": "9b2feab5-71a0-41c6-8bcd-de67b819fdca",
   "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
-  "to": "jsongle-server",  // generated id (client is anonymous at that time)
+  "to": "jsongle-server",
   "jsongle": {
     "action": "iq-set",
-    "query": "leave",
+    "query": "session-leave",
     "description": {
-      "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777", // arbitrary room name known by clients who want to have a call or conversation
+      "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777"
     },
   },
 }
 ```
+
+### Join a MUC room
+
+In the same way, joining a MUC room could be done by sending a IQ
+
+```json
+{
+  "id": "9b2feab5-71a0-41c6-8bcd-de67b819fdca",
+  "from": "8e784de9-ba76-4b0f-bedf-e21cac593f75", 
+  "to": "jsongle-server",  
+  "jsongle": {
+    "action": "iq-set",
+    "query": "muc-join",
+    "namespace": "muc",
+    "description": {
+      "rid": "43784dd3-cb76-4e5f-b4df-354cac5df777" 
+    }
+  }
+}
+```
+
+Where `rid` is the id of the MUC room to join.
 
 An `iq_result` or an `iq_error` message is sent depending on the result.
 
@@ -210,6 +240,6 @@ All remaining members of that room receive a `session-event` message to inform t
 
 Any messages sent to the room is then dispatched to all members (except the emitter) on behalf of the room. 
 
-At this time of writing, for having video calls, rooms should be limited to 2 users. 
+At this time of writing, only P2P room can have video calls (limited to 2 participants), muc rooms could only have messaging conversation. 
 
-
+See [JSONgle](https://github.com/oanguenot/JSONgle) for the client API.
