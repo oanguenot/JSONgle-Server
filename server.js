@@ -8,10 +8,12 @@ const { CONFIG, configure } = require("./modules/services/config");
 const { info, debug, setLevelTo, getLogLevel, createLogger, error } = require("./modules/services/logger");
 const socket = require('./modules/services/socket');
 const { collect, requestCounters, responseCounters } = require("./modules/services/prom");
+const {setUpTime} = require("./modules/helpers/common");
 
 const moduleName = "server";
 
 const initialize = () => {
+    setUpTime();
     configure();
     createLogger();
     setLevelTo(CONFIG().logDefaultLevel);
@@ -42,14 +44,10 @@ const initialize = () => {
         };
 
         debug({ module: moduleName, label: `setup REST API server on port ${CONFIG().restPort}` });
-        const restServer = require('https').createServer(options, app);
-        restServer.listen(8081, () => {
-            debug({ module: moduleName, label: `REST API server started successfully on port ${CONFIG().restPort}` });
+        const restServer = require('http').createServer(options, app);
+        restServer.listen(CONFIG().restPort, () => {
+            debug({ module: moduleName, label: `HTTPS REST API server started successfully on port ${CONFIG().restPort}` });
         });
-
-        debug({ module: moduleName, label: "setup routes for API server" });
-        require('./modules/routes/serviceability')(app);
-        require('./modules/routes/metrics')(app);
 
         debug({ module: moduleName, label: "start collecting metrics" });
         collect();
@@ -67,6 +65,11 @@ const initialize = () => {
         wsServer.listen(CONFIG().wsPort, () => {
             debug({ module: moduleName, label: `webSockets server started successfully on port ${CONFIG().wsPort}` });
         });
+
+        debug({ module: moduleName, label: "setup routes for API server" });
+        require('./modules/routes/serviceability')(app, io);
+        require('./modules/routes/metrics')(app, io);
+
     } else {
         error({ module: moduleName, label: `file ${String(CONFIG().key)} or ${String(CONFIG().cert)} is missing - can't start REST and Websocket servers` })
     }

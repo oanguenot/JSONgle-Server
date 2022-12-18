@@ -1,8 +1,10 @@
 const { setLevelTo, getLogLevel } = require("../services/logger");
 const package = require('../../package.json');
 const { CONFIG } = require("../services/config");
+const {grab} = require("../services/prom");
+const {getUptTime} = require("../helpers/common");
 
-module.exports = (app, q) => {
+module.exports = (app, io) => {
 
   /**
    * Server About
@@ -13,8 +15,11 @@ module.exports = (app, q) => {
       name: package.name,
       version: package.version,
       description: package.description,
+      started: getUptTime().toJSON(),
       configuration: {
-        backendServerURL: CONFIG().backendServerUrl,
+        restPort: CONFIG().restPort,
+        wsPort: CONFIG().wsPort,
+        backendServerURL: CONFIG().backendServerUrl ? CONFIG().backendServerURL : "",
       }
     });
   });
@@ -57,5 +62,25 @@ module.exports = (app, q) => {
         console.log(err);
       }
     });
+  });
+
+  /**
+   * Tests
+   * Check that the server is able to do requests
+   */
+  app.get('/tests', (req, res) => {
+    if(io.engine) {
+      res.status(200).json({score: 100});
+    }
+  });
+
+  /**
+   * Usage
+   * Get usage
+   */
+  app.get('/stats', async (req, res) => {
+    const stats = await grab();
+    const filteredStats = stats.split("\n").filter(line => (line.length > 0 && !line.startsWith("#") && !(line.startsWith("technical_"))));
+    res.status(200).json(filteredStats);
   });
 }

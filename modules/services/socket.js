@@ -1,5 +1,5 @@
 const { info, error, debug } = require("./logger");
-const { addUsersCounter, minusUsersCounter, minusRoomsCounter, minusMucCounter, addUsersTotalCounter} = require("./prom");
+const { addUsersCounter, minusUsersCounter, minusConferencesCounter, addUsersTotalCounter} = require("./prom");
 const { buildEvent } = require("../helpers/jsongle");
 const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 
@@ -110,11 +110,7 @@ exports.listen = (io, CFG) => {
                 const messageLeftRoom = buildEvent(CFG.id, client.id, connectToAMultiRoom ? JSONGLE_EVENTS_NAMESPACE.MUC : JSONGLE_EVENTS_NAMESPACE.ROOM, JSONGLE_ROOM_EVENTS.LEFT, { member: socket.data, rid });
                 emitMessage(messageLeftRoom, client, io);
               } else if (id === socket.id && mappedClients.size === 1) {
-                if(connectToAMultiRoom) {
-                  minusMucCounter();
-                } else {
-                  minusRoomsCounter();
-                }
+                  minusConferencesCounter();
               }
             });
           }

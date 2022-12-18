@@ -5,7 +5,7 @@ const { buildIQ, describeHello, buildError, describeErrorHello, isHelloValid, bu
 const { JSONGLE_MESSAGE_TYPE, JSONGLE_IQ_QUERY, JSONGLE_ERROR_CODE, JSONGLE_ACK_VALUE, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 const { emitMessage } = require('./emitter');
 const { CONFIG } = require('../services/config');
-const { addRoomsCounter, addMucCounter, addMucTotalCounter, addRoomsTotalCounter} = require("../services/prom");
+const { addConferencesCounter, addMucCounter, addMucTotalCounter, addConferencesTotalCounter} = require("../services/prom");
 
 const moduleName = "sig:iq";
 
@@ -56,13 +56,8 @@ const registerUserToRoom = async (message, socket, io, connectToAMultiRoom = fal
         members.push(client.data);
       });
     } else {
-      if (connectToAMultiRoom) {
-        addMucCounter();
-        addMucTotalCounter();
-      } else {
-        addRoomsCounter();
-        addRoomsTotalCounter();
-      }
+        addConferencesCounter();
+        addConferencesTotalCounter();
     }
 
     info({ module: moduleName, label: `${socket.id} joined ${connectToAMultiRoom ? 'multiroom' : 'room'} ${rid}` });

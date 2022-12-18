@@ -27,10 +27,10 @@ var responses = new client.Summary({
 });
 
 exports.collect = () => {
-  const collectDefaultMetrics = client.collectDefaultMetrics;
-  const Registry = client.Registry;
-  registry = new Registry();
-  collectDefaultMetrics({ registry });
+  // const collectDefaultMetrics = client.collectDefaultMetrics;
+  // const Registry = client.Registry;
+  // registry = new Registry();
+  // collectDefaultMetrics({ registry });
 }
 
 exports.grab = async () => {
@@ -96,130 +96,93 @@ exports.addUsersTotalCounter = () => {
   users_total.inc(1);
 }
 
-/* -------------------------------------------------- Business Metrics for Remote Consultation -------------------------------------------------- */
+/* -------------------------------------------------- Business Metrics for conferences endpoint -------------------------------------------------- */
 
 /**
- * Number of remote consultation rooms opened by doctors (live)
+ * Number of conferences
  */
-var rooms = new client.Gauge({
-  name: 'remote_consultations_opened_count',
-  help: 'Number of simultaneous rooms opened for remote consultations for doctors',
-  labelNames: ['remote_consultations_opened_count']
+var conferences = new client.Gauge({
+  name: 'conferences_count',
+  help: 'Number of active conferences',
+  labelNames: ['conferences_count']
 });
-rooms.set(0);
+conferences.set(0);
 
-exports.resetRoomsCounter = () => {
-  rooms.set(0);
+exports.resetConferencesCounter = () => {
+  conferences.set(0);
 }
 
-exports.addRoomsCounter = () => {
-  rooms.inc(1);
+exports.addConferencesCounter = () => {
+  conferences.inc(1);
 }
 
-exports.minusRoomsCounter = () => {
-  rooms.dec(1);
-}
-
-/**
- * Number of remote consultations rooms opened in total
- */
-var rooms_total = new client.Counter({
-  name: 'remote_consultations_opened_total',
-  help: 'Total of rooms opened for remote consultations',
-  labelNames: ['remote_consultations_opened_total']
-});
-
-exports.addRoomsTotalCounter = () => {
-  rooms_total.inc(1);
+exports.minusConferencesCounter = () => {
+  conferences.dec(1);
 }
 
 /**
- * Number of remote consultation in progress (live)
+ * Number of conferences opened in total
  */
-var remoteConsultations = new client.Gauge({
-  name: 'remote_consultations_count',
-  help: 'Number of simultaneous remote consultations in progress',
-  labelNames: ['remote_consultations_count']
-});
-remoteConsultations.set(0);
-
-exports.resetRemoteConsultationsCounter = () => {
-  remoteConsultations.set(0);
-}
-
-exports.addRemoteConsultationsCounter = () => {
-  remoteConsultations.inc(1);
-}
-
-exports.minusRemoteConsultationsCounter = () => {
-  remoteConsultations.dec(1);
-}
-
-var remoteConsultations_total = new client.Counter({
-  name: 'remote_consultations_total',
-  help: 'Total of remote consultations done',
-  labelNames: ['remote_consultations_total']
+var conferences_total = new client.Counter({
+  name: 'conferences_total',
+  help: 'Total of conferences created so far',
+  labelNames: ['conferences_total']
 });
 
-exports.addRemoteConsultationsTotalCounter = () => {
-  remoteConsultations_total.inc(1);
+exports.addConferencesTotalCounter = () => {
+  conferences_total.inc(1);
 }
 
-var remoteConsultations_duration = new client.Counter({
-  name: 'remote_consultations_duration',
-  help: 'Total duration of remote consultations done',
-  labelNames: ['remote_consultations_duration']
+/**
+ * Number of p2p calls
+ */
+var p2p = new client.Gauge({
+  name: 'p2p_count',
+  help: 'Number of simultaneous p2p calls',
+  labelNames: ['p2p_count']
+});
+p2p.set(0);
+
+exports.resetP2PCounter = () => {
+  p2p.set(0);
+}
+
+exports.addP2PCounter = () => {
+  p2p.inc(1);
+}
+
+exports.minusP2PCounter = () => {
+  p2p.dec(1);
+}
+
+var p2p_total = new client.Counter({
+  name: 'p2p_total',
+  help: 'Total of p2p done',
+  labelNames: ['p2p_total']
 });
 
-exports.addRemoteConsultationsDurationCounter = (duration) => {
-  remoteConsultations_duration.inc(duration);
+exports.addP2PTotalCounter = () => {
+  p2p_total.inc(1);
 }
 
-var failed = new client.Counter({
-  name: 'remote_consultations_failed_total',
+var p2p_duration_total = new client.Counter({
+  name: 'p2p_duration_total',
+  help: 'Total duration of p2p',
+  labelNames: ['p2p_duration_total']
+});
+
+exports.addP2PDurationCounter = (duration) => {
+  p2p_duration_total.inc(duration);
+}
+
+var p2p_failed = new client.Counter({
+  name: 'p2p_failed_total',
   help: 'Total of sessions that did not succeed (ICE Failed)',
-  labelNames: ['remote_consultations_failed_total'],
+  labelNames: ['p2p_failed_total'],
 });
 
-exports.addRemoteConsultationsFailed = () => {
-  failed.inc(1);
-}
-
-/* -------------------------------------------------- Business Metrics for Discussion Groups -------------------------------------------------- */
-
-/**
- * Number of groups opened (live)
- */
-var groups = new client.Gauge({
-  name: 'groups_opened_count',
-  help: 'Number of active groups of discussion (with at least one member connected)',
-  labelNames: ['groups_opened_count']
-});
-groups.set(0);
-
-exports.resetMucCounter = () => {
-  groups.set(0);
-}
-
-exports.addMucCounter = () => {
-  groups.inc(1);
-}
-
-exports.minusMucCounter = () => {
-  groups.dec(1);
-}
-
-/**
- * Number of groups opened in total
- */
-var groups_total = new client.Counter({
-  name: 'groups_total',
-  help: 'Total of groups opened',
-  labelNames: ['groups_total']
-});
-
-exports.addMucTotalCounter = () => {
-  groups_total.inc(1);
+exports.addP2PFailed = () => {
+  p2p_failed.inc(1);
 }
 
 var messages = new client.Counter({
@@ -242,180 +205,11 @@ exports.addReactionsCounter = () => {
   reactions.inc(1);
 }
 
-/* -------------------------------------------------- Business Metrics for Browsers -------------------------------------------------- */
-
-var chrome = new client.Counter({
-  name: 'browser_chrome_total',
-  help: 'Total of sessions made using the Chrome or Chromium based browser',
-  labelNames: ['browser_chrome_total'],
-});
-
-exports.addChrome = () => {
-  chrome.inc(1);
-}
-
-var firefox = new client.Counter({
-  name: 'browser_firefox_total',
-  help: 'Total of sessions made using the Firefox browser',
-  labelNames: ['browser_firefox_total'],
-});
-
-exports.addFirefox = () => {
-  firefox.inc(1);
-}
-
-var safari = new client.Counter({
-  name: 'browser_safari_total',
-  help: 'Total of sessions made using the Safari browser',
-  labelNames: ['browser_safari_total'],
-});
-
-exports.addSafari = () => {
-  safari.inc(1);
-}
-
-var others = new client.Counter({
-  name: 'browser_others_total',
-  help: 'Total of sessions made using other browsers',
-  labelNames: ['browser_others_total'],
-});
-
-exports.addOthers = () => {
-  others.inc(1);
-}
-
-/* -------------------------------------------------- Business Metrics for System -------------------------------------------------- */
-
-var ios = new client.Counter({
-  name: 'system_ios_total',
-  help: 'Total of sessions made on Iphone/Ipad',
-  labelNames: ['system_ios_total'],
-});
-
-exports.addIOS = () => {
-  ios.inc(1);
-}
-
-var android = new client.Counter({
-  name: 'system_android_total',
-  help: 'Total of sessions made on Android',
-  labelNames: ['system_android_total'],
-});
-
-exports.addAndroid = () => {
-  android.inc(1);
-}
-
-var windows = new client.Counter({
-  name: 'system_windows_total',
-  help: 'Total of sessions made on Windows',
-  labelNames: ['system_windows_total'],
-});
-
-exports.addWindows = () => {
-  windows.inc(1);
-}
-
-var macOs = new client.Counter({
-  name: 'system_macos_total',
-  help: 'Total of sessions made on MacOs',
-  labelNames: ['system_macos_total'],
-});
-
-exports.addMacOS = () => {
-  macOs.inc(1);
-}
-
-var otherOS = new client.Counter({
-  name: 'system_others_total',
-  help: 'Total of sessions made on other systems',
-  labelNames: ['system_others_total'],
-});
-
-exports.addOtherOS = () => {
-  otherOS.inc(1);
-}
-
-/* -------------------------------------------------- Business Metrics for Route -------------------------------------------------- */
-
-var relay = new client.Counter({
-  name: 'route_relay_total',
-  help: 'Total of sessions done using the Turn server',
-  labelNames: ['turn_relay_total'],
-});
-
-exports.addRelay = () => {
-  relay.inc(1);
-}
-
-var direct = new client.Counter({
-  name: 'route_direct_total',
-  help: 'Total of sessions done without using the Turn server',
-  labelNames: ['turn_relay_total'],
-});
-
-exports.addDirect = () => {
-  direct.inc(1);
-}
-
-/* -------------------------------------------------- Business Metrics for MOS -------------------------------------------------- */
-
-var excellent = new client.Counter({
-  name: 'mos_excellent_total',
-  help: 'Total of sessions having a MOS score > 4.2',
-  labelNames: ['mos_excellent_total'],
-});
-
-exports.addExcellent = () => {
-  excellent.inc(1);
-}
-
-var good = new client.Counter({
-  name: 'mos_good_total',
-  help: 'Total of sessions done having a MOS score > 4.0',
-  labelNames: ['mos_good_total'],
-});
-
-exports.addGood = () => {
-  good.inc(1);
-}
-
-var fair = new client.Counter({
-  name: 'mos_fair_total',
-  help: 'Total of sessions done having a MOS score > 3.6',
-  labelNames: ['mos_fair_total'],
-});
-
-exports.addFair = () => {
-  fair.inc(1);
-}
-
-var poor = new client.Counter({
-  name: 'mos_poor_total',
-  help: 'Total of sessions done having a MOS score > 3.2',
-  labelNames: ['mos_poor_total'],
-});
-
-exports.addPoor = () => {
-  poor.inc(1);
-}
-
-var bad = new client.Counter({
-  name: 'mos_bad_total',
-  help: 'Total of sessions done having a MOS score < 3.2',
-  labelNames: ['mos_bad_total'],
-});
-
-exports.addBad = () => {
-  bad.inc(1);
-}
-
 /* -------------------------------------------------- Others -------------------------------------------------- */
 
 // Reset all specific gauges
 exports.resetAllCustomMetrics = () => {
-  this.resetRoomsCounter();
+  this.resetConferencesCounter();
   this.resetUsersCounter();
-  this.resetMucCounter();
-  this.resetRemoteConsultationsCounter();
+  this.resetP2PCounter();
 }
