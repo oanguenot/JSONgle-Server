@@ -1,5 +1,5 @@
 const { info, error, debug } = require("./logger");
-const { addUsersCounter, minusUsersCounter, minusConferencesCounter, addUsersTotalCounter} = require("./prom");
+const { addUsersCounter, minusUsersCounter, minusConferencesCounter, addUsersTotalCounter, addDurationTotalCounter} = require("./prom");
 const { buildEvent } = require("../helpers/jsongle");
 const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 
@@ -123,6 +123,10 @@ exports.listen = (io, CFG) => {
       info({ module: moduleName, label: `user ${socket.id} disconnected` });
 
       minusUsersCounter();
+      const issued = (socket.handshake && socket.handshake.issued) || Date.now();
+
+      const minutes = (Date.now() - issued) / 1000 / 60;
+     addDurationTotalCounter(minutes);
 
       const totalUsers = io.engine.clientsCount;
       debug({ module: moduleName, label: `${totalUsers} user(s) still connected` });

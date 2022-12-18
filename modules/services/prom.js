@@ -96,6 +96,20 @@ exports.addUsersTotalCounter = () => {
   users_total.inc(1);
 }
 
+/**
+ * Count the number of minutes connected for all users to the SIG server
+ */
+var duration_total = new client.Counter({
+  name: 'duration_total',
+  help: 'Total of time connected for all users in minutes',
+  labelNames: ['duration_total']
+});
+
+exports.addDurationTotalCounter = (minutes) => {
+  duration_total.inc(minutes);
+}
+
+
 /* -------------------------------------------------- Business Metrics for conferences endpoint -------------------------------------------------- */
 
 /**
