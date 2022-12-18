@@ -1,5 +1,7 @@
 const { info, error, debug } = require("./logger");
-const { addUsersCounter, minusUsersCounter, minusConferencesCounter, addUsersTotalCounter, addDurationTotalCounter} = require("./prom");
+const { addUsersCounter, minusUsersCounter, minusConferencesCounter, addUsersTotalCounter, addDurationTotalCounter,
+  addReceivedTotalCounter
+} = require("./prom");
 const { buildEvent } = require("../helpers/jsongle");
 const { JSONGLE_MESSAGE_TYPE, COMMON, JSONGLE_EVENTS_NAMESPACE, JSONGLE_ROOM_EVENTS } = require("../helpers/helper");
 
@@ -47,6 +49,9 @@ exports.listen = (io, CFG) => {
     // Handle JSONGLE message
     socket.on(COMMON.JSONGLE, (message) => {
       debug({ module: moduleName, method: "RECV", message });
+
+      const message_size = Buffer.byteLength(JSON.stringify(message)) / 1000 / 1000;
+      addReceivedTotalCounter(message_size);
 
       if (!isMessageQualified(message, socket, io)) {
         return;

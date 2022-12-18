@@ -1,5 +1,6 @@
 const { debug } = require("../services/logger");
 const { COMMON, JSONGLE_EVENTS_NAMESPACE } = require("../helpers/helper");
+const {addSentTotalCounter} = require("../services/prom");
 
 const moduleName = "sig:emit";
 
@@ -21,6 +22,9 @@ exports.emitMessage = (message, socket, io, toAll = false) => {
           msg.to = id;
           const client = io.of('/').sockets.get(id);
           client.emit(COMMON.JSONGLE, msg);
+
+          const message_size = Buffer.byteLength(JSON.stringify(msg)) / 1000 / 1000;
+          addSentTotalCounter(message_size)
         }
       });
     }

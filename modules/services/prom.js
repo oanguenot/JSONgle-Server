@@ -109,6 +109,27 @@ exports.addDurationTotalCounter = (minutes) => {
   duration_total.inc(minutes);
 }
 
+/* -------------------------------------------------- Business Metrics for traffic -------------------------------------------------- */
+
+var recv_total = new client.Counter({
+  name: 'recv_total',
+  help: 'Total of MB received for all users',
+  labelNames: ['recv_total']
+});
+
+exports.addReceivedTotalCounter = (MB) => {
+  recv_total.inc(MB);
+}
+
+var sent_total = new client.Counter({
+  name: 'sent_total',
+  help: 'Total of MB sent for all users',
+  labelNames: ['sent_total']
+});
+
+exports.addSentTotalCounter = (MB) => {
+  sent_total.inc(MB);
+}
 
 /* -------------------------------------------------- Business Metrics for conferences endpoint -------------------------------------------------- */
 
