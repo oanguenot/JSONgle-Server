@@ -3,24 +3,24 @@ const ResponseTime = require('response-time');
 
 let registry = null;
 
-var metricsGetsCounter = new client.Counter({
+let metricsGetsCounter = new client.Counter({
   name: 'technical_metrics_requests_total',
   help: 'number of GET /metrics requests',
 });
 
-var numOfRequests = new client.Counter({
+let numOfRequests = new client.Counter({
   name: 'technical_all_requests_total',
   help: 'Number of requests made',
   labelNames: ['method']
 });
 
-var pathsTaken = new client.Counter({
+let pathsTaken = new client.Counter({
   name: 'technical_all_paths_requests',
   help: 'Paths taken in the app',
   labelNames: ['path']
 });
 
-var responses = new client.Summary({
+let responses = new client.Summary({
   name: 'technical_response_time_ms',
   help: 'Response time in millis',
   labelNames: ['method', 'path', 'status']
@@ -64,7 +64,7 @@ exports.responseCounters = ResponseTime((req, res, time) => {
 /**
  * Count the number of users that are currently connected to the SIG server
  */
-var users = new client.Gauge({
+let users = new client.Gauge({
   name: 'users_count',
   help: 'Number of simultaneous users that are currently connected to the SIG server',
   labelNames: ['users_count']
@@ -86,7 +86,7 @@ exports.minusUsersCounter = () => {
 /**
  * Count the number of users that have connected to the SIG server
  */
-var users_total = new client.Counter({
+let users_total = new client.Counter({
   name: 'users_total',
   help: 'Total of users that have connected to the SIG server',
   labelNames: ['users_total']
@@ -99,7 +99,7 @@ exports.addUsersTotalCounter = () => {
 /**
  * Count the number of minutes connected for all users to the SIG server
  */
-var duration_total = new client.Counter({
+let duration_total = new client.Counter({
   name: 'duration_total',
   help: 'Total of time connected for all users in minutes',
   labelNames: ['duration_total']
@@ -111,7 +111,7 @@ exports.addDurationTotalCounter = (minutes) => {
 
 /* -------------------------------------------------- Business Metrics for traffic -------------------------------------------------- */
 
-var recv_total = new client.Counter({
+let recv_total = new client.Counter({
   name: 'recv_total',
   help: 'Total of MB received for all users',
   labelNames: ['recv_total']
@@ -121,7 +121,7 @@ exports.addReceivedTotalCounter = (MB) => {
   recv_total.inc(MB);
 }
 
-var sent_total = new client.Counter({
+let sent_total = new client.Counter({
   name: 'sent_total',
   help: 'Total of MB sent for all users',
   labelNames: ['sent_total']
@@ -136,7 +136,7 @@ exports.addSentTotalCounter = (MB) => {
 /**
  * Number of conferences
  */
-var conferences = new client.Gauge({
+let conferences = new client.Gauge({
   name: 'conferences_count',
   help: 'Number of active conferences',
   labelNames: ['conferences_count']
@@ -158,7 +158,7 @@ exports.minusConferencesCounter = () => {
 /**
  * Number of conferences opened in total
  */
-var conferences_total = new client.Counter({
+let conferences_total = new client.Counter({
   name: 'conferences_total',
   help: 'Total of conferences created so far',
   labelNames: ['conferences_total']
@@ -171,7 +171,7 @@ exports.addConferencesTotalCounter = () => {
 /**
  * Number of p2p calls
  */
-var p2p = new client.Gauge({
+let p2p = new client.Gauge({
   name: 'p2p_count',
   help: 'Number of simultaneous p2p calls',
   labelNames: ['p2p_count']
@@ -190,7 +190,7 @@ exports.minusP2PCounter = () => {
   p2p.dec(1);
 }
 
-var p2p_total = new client.Counter({
+let p2p_total = new client.Counter({
   name: 'p2p_total',
   help: 'Total of p2p done',
   labelNames: ['p2p_total']
@@ -200,7 +200,7 @@ exports.addP2PTotalCounter = () => {
   p2p_total.inc(1);
 }
 
-var p2p_duration_total = new client.Counter({
+let p2p_duration_total = new client.Counter({
   name: 'p2p_duration_total',
   help: 'Total duration of p2p',
   labelNames: ['p2p_duration_total']
@@ -210,7 +210,7 @@ exports.addP2PDurationCounter = (duration) => {
   p2p_duration_total.inc(duration);
 }
 
-var p2p_failed = new client.Counter({
+let p2p_failed = new client.Counter({
   name: 'p2p_failed_total',
   help: 'Total of sessions that did not succeed (ICE Failed)',
   labelNames: ['p2p_failed_total'],
@@ -220,7 +220,7 @@ exports.addP2PFailed = () => {
   p2p_failed.inc(1);
 }
 
-var messages = new client.Counter({
+let messages = new client.Counter({
   name: 'messages_total',
   help: 'Total of messages exchanged in groups',
   labelNames: ['messages_total']
@@ -230,7 +230,7 @@ exports.addMessagesCounter = () => {
   messages.inc(1);
 }
 
-var reactions = new client.Counter({
+let reactions = new client.Counter({
   name: 'reactions_total',
   help: 'Total of reactions exchanged in groups',
   labelNames: ['reactions_total']
@@ -247,4 +247,13 @@ exports.resetAllCustomMetrics = () => {
   this.resetConferencesCounter();
   this.resetUsersCounter();
   this.resetP2PCounter();
+  users_total.inc(0);
+  conferences_total.inc(0);
+  duration_total.inc(0);
+  recv_total.inc(0);
+  sent_total.inc(0);
+  reactions.inc(0);
+  messages.inc(0);
+  p2p_total.inc(0);
+  p2p_failed.inc(0);
 }

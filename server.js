@@ -7,7 +7,7 @@ const cors = require('cors');
 const { CONFIG, configure } = require("./modules/services/config");
 const { info, debug, setLevelTo, getLogLevel, createLogger, error } = require("./modules/services/logger");
 const socket = require('./modules/services/socket');
-const { collect, requestCounters, responseCounters } = require("./modules/services/prom");
+const { collect, requestCounters, responseCounters, resetAllCustomMetrics} = require("./modules/services/prom");
 const {setUpTime} = require("./modules/helpers/common");
 
 const moduleName = "server";
@@ -17,6 +17,7 @@ const initialize = () => {
     configure();
     createLogger();
     setLevelTo(CONFIG().logDefaultLevel);
+    resetAllCustomMetrics();
     debug({ module: moduleName, label: `Log level set to ${getLogLevel()}` });
 
     debug({ module: moduleName, label: "---------------------------------------------------------------------" });
