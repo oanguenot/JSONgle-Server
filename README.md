@@ -83,11 +83,15 @@ Basically, **JSONgle-Server** offers the following APIs:
 
 - **GET /about**: This API returns a JSON description of the server containing the version used and a description
 
-- **GET /ping**: This API returns a JSON `OK` status
+- **GET /ping**: This API returns the code HTTP 200OK if the server is up 
 
 - **PUT /logs/levels**: This API expects a JSON object containing a `level` property for updating the log level. Expected values are as usual: `debug`, `info`, etc...
 
 - **GET /metrics**: This API returns a **Prometheus** metrics when requested. 
+
+- **GET /stats**: This API returns the statistics (Prometheus) in JSON
+
+- **GET /tests**: This API does a self-check and returns the code 200OK in case of success
 
 These APIs allow to monitor the **JSONgle-Server** in real-time.
 
@@ -246,3 +250,19 @@ Any messages sent to the room is then dispatched to all members (except the emit
 At this time of writing, only P2P room can have video calls (limited to 2 participants), muc rooms could only have messaging conversation. 
 
 See [JSONgle](https://github.com/oanguenot/JSONgle) for the client API.
+
+### Prometheus Metrics
+
+**JSONgle-Server** computes the following metrics:
+
+| Metrics               | Description                                                                                              |
+|:----------------------|:---------------------------------------------------------------------------------------------------------|
+| **users_count**       | (gauge) Counts the number of active clients connected                                                    |
+| **users_total**       | (counter) Counts the grand total of connected clients since the last restart                             |
+| **conferences_count** | (gauge) Counts the number of active conferences                                                          |                                                          
+ | **conferences_total** | (counter) Counts the grand total of conferences created since the last restart                           |                           
+| **duration_total**    | (counter) Counts the connection's duration grand total for all users since the last restart (in minutes) |
+| **recv_total**        | (counter) Counts the grand total of traffic received from all users since the last restart (in MB)       |
+| **sent_total**        | (counter) Counts the grand total of traffic sent to all users since the last restart (in MB)             |
+
+These metrics are available in the REST API `GET /metrics` for Prometheus and in API `GET /stats` in JSON.
