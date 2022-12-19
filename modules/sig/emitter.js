@@ -24,12 +24,15 @@ exports.emitMessage = (message, socket, io, toAll = false) => {
           client.emit(COMMON.JSONGLE, msg);
 
           const message_size = Buffer.byteLength(JSON.stringify(msg)) / 1000 / 1000;
-          addSentTotalCounter(message_size)
+          addSentTotalCounter(message_size);
         }
       });
     }
   } else {
     debug({ module: moduleName, method: "SEND", message });
     socket.emit(COMMON.JSONGLE, message);
+
+    const message_size = Buffer.byteLength(JSON.stringify(message)) / 1000 / 1000;
+    addSentTotalCounter(message_size)
   }
 }
