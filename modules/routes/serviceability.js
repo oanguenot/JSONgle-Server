@@ -81,6 +81,14 @@ module.exports = (app, io) => {
   app.get('/stats', async (req, res) => {
     const stats = await grab();
     const filteredStats = stats.split("\n").filter(line => (line.length > 0 && !line.startsWith("#") && !(line.startsWith("technical_"))));
-    res.status(200).json(filteredStats);
+    const JSONStats = {};
+    filteredStats.forEach(stat => {
+      const values = stat.split(' ');
+      if (values.length === 2) {
+        JSONStats[values[0]] = Number(values[1]);
+      }
+    });
+
+    res.status(200).json(JSONStats);
   });
 }
