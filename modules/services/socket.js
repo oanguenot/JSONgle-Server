@@ -131,7 +131,7 @@ exports.listen = (io, CFG) => {
       const issued = (socket.handshake && socket.handshake.issued) || Date.now();
 
       const minutes = (Date.now() - issued) / 1000 / 60;
-     addDurationTotalCounter(minutes);
+      addDurationTotalCounter(minutes);
 
       const totalUsers = io.engine.clientsCount;
       debug({ module: moduleName, label: `${totalUsers} user(s) still connected` });

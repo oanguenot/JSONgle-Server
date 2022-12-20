@@ -45,7 +45,7 @@ const initialize = () => {
         };
 
         debug({ module: moduleName, label: `setup REST API server on port ${CONFIG().restPort}` });
-        const restServer = require('http').createServer(options, app);
+        const restServer = require('https').createServer(options, app);
         restServer.listen(CONFIG().restPort, () => {
             debug({ module: moduleName, label: `HTTPS REST API server started successfully on port ${CONFIG().restPort}` });
         });
