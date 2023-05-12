@@ -150,7 +150,7 @@ exports.handleIQ = async (message, socket, io) => {
       }
       break;
     default:
-      const messageIQErrorNotFound = buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, jsongle.query, descriptionForIQNotFound(jsongle.query));
+      const messageIQErrorNotFound = buildIQ(message.to, message.from, JSONGLE_MESSAGE_TYPE.IQ_ERROR, jsongle.transaction, jsongle.query, jsongle.query);
       emitMessage(messageIQErrorNotFound, socket, io);
   }
 }
