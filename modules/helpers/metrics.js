@@ -34,7 +34,7 @@ exports.computeDisk = () => {
         }
       }
 
-      resolve(diskFree);
+      resolve(+diskFree.toFixed(1));
     });
   });
 };
@@ -43,7 +43,8 @@ exports.computeMemory = () => {
   const totalMemory = os.totalmem() / (1024 * 1024);
   const freeMemory = os.freemem() / (1024 * 1024);
   if(freeMemory && totalMemory) {
-    return (freeMemory / totalMemory) * 100;
+    const percentFreeMem = (freeMemory / totalMemory) * 100;
+    return +percentFreeMem.toFixed(1);
   }
   return -1;
 }
