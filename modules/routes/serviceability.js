@@ -26,10 +26,10 @@ module.exports = (app, io) => {
   });
 
   /**
-   * Server Ping
+   * Server Health
    * Return OK to indicate it works. Content is optional
    */
-  app.get('/ping', async (req, res) => {
+  app.get('/health', async (req, res) => {
     res.status(200).json({ "status": "OK" });
   });
 
@@ -79,10 +79,10 @@ module.exports = (app, io) => {
    * - 'freeMemory': (Number) percent of free memory of the system
    * - 'freeCPU': (Number) percent of free CPU of the system
    * - 'freeDisk': (Number) percent of free Disk of the system
-   * - 'uptime': (Number) Number of seconds since the system is up
+   * - 'uptime': (Number) Timestamp in ms of the system's start (starting 1970)
    * - 'executionTime': (Number) Duration in ms for executing the healthcheck
    */
-  app.get('/health', async (req, res) => {
+  app.get('/telemetry', async (req, res) => {
       try {
         const startTime = Date.now();
         const data = {};

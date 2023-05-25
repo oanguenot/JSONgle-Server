@@ -86,7 +86,10 @@ exports.computeCPU = () => {
 }
 
 exports.computeUptime = () => {
-  return os.uptime() || 0;
+  const uptime = os.uptime() || 0;
+  let current = new Date();
+  let timestamp = current.setSeconds(current.getSeconds() - uptime)
+  return new Date(timestamp).toJSON();
 }
 
 exports.computeSystem = () => {
