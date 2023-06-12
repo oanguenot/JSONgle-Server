@@ -16,6 +16,7 @@ const DEFAULT_CONFIG = {
   multiRoomPrefix: "#muc#",
   maxMembersPerMultiRoom: 10,
   maxMultiRoomPerUser: 10,
+  useHTTPS: true,
 };
 
 let _CONFIG = null;

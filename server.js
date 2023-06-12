@@ -38,42 +38,51 @@ const initialize = () => {
     app.use(requestCounters);
     app.use(responseCounters);
 
-    if (fs.existsSync(String(CONFIG().key)) && fs.existsSync(String(CONFIG().cert))) {
-        const options = {
-            key: fs.readFileSync(String(CONFIG().key)),
-            cert: fs.readFileSync(String(CONFIG().cert))
-        };
+    const options = {};
+    let useHTTPS = false;
 
-        debug({ module: moduleName, label: `setup REST API server on port ${CONFIG().restPort}` });
-        const restServer = require('https').createServer(options, app);
-        restServer.listen(CONFIG().restPort, () => {
-            debug({ module: moduleName, label: `HTTPS REST API server started successfully on port ${CONFIG().restPort}` });
-        });
-
-        debug({ module: moduleName, label: "start collecting metrics" });
-        collect();
-
-        debug({ module: moduleName, label: `setup webSockets server on port ${CONFIG().wsPort}` });
-        const wsServer = require('https').createServer(options);
-        const io = require('socket.io')(wsServer, {
-            cors: {
-                origin: CONFIG().corsPolicyOrigin,
-                methods: ["GET", "POST"],
-                credentials: true
-            }
-        });
-        socket.listen(io, CONFIG());
-        wsServer.listen(CONFIG().wsPort, () => {
-            debug({ module: moduleName, label: `webSockets server started successfully on port ${CONFIG().wsPort}` });
-        });
-
-        debug({ module: moduleName, label: "setup routes for API server" });
-        require('./modules/routes/serviceability')(app, io);
-        require('./modules/routes/metrics')(app, io);
-
+    if(CONFIG().useHTTPS) {
+        if (fs.existsSync(String(CONFIG().key)) && fs.existsSync(String(CONFIG().cert))) {
+            options.key = fs.readFileSync(String(CONFIG().key));
+            options.cert = fs.readFileSync(String(CONFIG().cert));
+            useHTTPS = true;
+            debug({ module: moduleName, label: `using HTTPS` });
+        } else {
+            error({
+                module: moduleName,
+                label: `file ${String(CONFIG().key)} or ${String(CONFIG().cert)} is missing - can't start REST and Websocket servers in HTTPS`
+            });
+        }
     } else {
-        error({ module: moduleName, label: `file ${String(CONFIG().key)} or ${String(CONFIG().cert)} is missing - can't start REST and Websocket servers` })
+        debug({ module: moduleName, label: `using HTTP` });
     }
+
+    debug({ module: moduleName, label: `setup REST API server on port ${CONFIG().restPort}` });
+    const restServer = useHTTPS ? require('https').createServer(options, app) : require('http').createServer(options, app);
+    restServer.listen(CONFIG().restPort, () => {
+        debug({ module: moduleName, label: `${useHTTPS ? "HTTPS" : "HTTP"} REST API server started successfully on port ${CONFIG().restPort}` });
+    });
+
+    debug({ module: moduleName, label: "start collecting metrics" });
+    collect();
+
+    debug({ module: moduleName, label: `setup webSockets server on port ${CONFIG().wsPort}` });
+    const wsServer = useHTTPS ? require('https').createServer(options): require('http').createServer(options);
+    const io = require('socket.io')(wsServer, {
+        cors: {
+            origin: CONFIG().corsPolicyOrigin,
+            methods: ["GET", "POST"],
+            credentials: true
+        }
+    });
+    socket.listen(io, CONFIG());
+    wsServer.listen(CONFIG().wsPort, () => {
+        debug({ module: moduleName, label: `webSockets server started successfully on port ${CONFIG().wsPort}` });
+    });
+
+    debug({ module: moduleName, label: "setup routes for API server" });
+    require('./modules/routes/serviceability')(app, io);
+    require('./modules/routes/metrics')(app, io);
 
     info({ module: moduleName, label: `initialization done!` });
 };
