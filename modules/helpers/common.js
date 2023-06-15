@@ -9,5 +9,5 @@ exports.setUpTime = () => {
 }
 
 exports.getUptTime = () => {
-  return upTime;
+  return upTime || new Date();
 }

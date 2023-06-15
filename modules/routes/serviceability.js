@@ -20,7 +20,7 @@ module.exports = (app, io) => {
       configuration: {
         restPort: CONFIG().restPort,
         wsPort: CONFIG().wsPort,
-        backendServerURL: CONFIG().backendServerUrl ? CONFIG().backendServerURL : "",
+        useSSL: CONFIG().useHTTPS,
       }
     });
   });
@@ -99,8 +99,6 @@ module.exports = (app, io) => {
           "errorMsg": "can't get the health measure"
         })
       }
-
-
   });
 
   /**
@@ -134,8 +132,4 @@ module.exports = (app, io) => {
       }
     });
   });
-
-
-
-
 }
